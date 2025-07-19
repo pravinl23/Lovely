@@ -1,0 +1,68 @@
+# Core Python dependencies
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# WhatsApp API & HTTP
+httpx==0.25.2
+aiohttp==3.9.1
+requests==2.31.0
+
+# Database & ORM
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+alembic==1.12.1
+psycopg2-binary==2.9.9
+
+# Vector Database
+pgvector==0.2.3
+faiss-cpu==1.7.4
+numpy==1.26.2
+
+# LLM & AI
+openai==1.5.0
+anthropic==0.8.1
+tiktoken==0.5.2
+langchain==0.0.352
+sentence-transformers==2.2.2
+transformers==4.36.2
+torch==2.1.2
+
+# Redis for queuing
+redis==5.0.1
+celery==5.3.4
+
+# Media processing
+Pillow==10.1.0
+opencv-python==4.8.1.78
+librosa==0.10.1
+soundfile==0.12.1
+
+# Security & Crypto
+cryptography==41.0.7
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pyjwt==2.8.0
+
+# Environment & Config
+python-dotenv==1.0.0
+pyyaml==6.0.1
+python-multipart==0.0.6
+
+# Monitoring & Logging
+structlog==23.2.0
+prometheus-client==0.19.0
+sentry-sdk==1.39.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+httpx-mock==0.25.0
+
+# Development tools
+black==23.12.0
+flake8==6.1.0
+mypy==1.7.1
+pre-commit==3.6.0 
