@@ -26,12 +26,25 @@ class DatabaseManager:
     """Manages all database operations"""
     
     def __init__(self):
-        # Create async engine
+        # Parse database URL and add SSL if connecting to Supabase
+        db_url = settings.database_url
+        
+        # Add SSL mode for Supabase (detects supabase.co in URL)
+        if 'supabase.co' in db_url and 'sslmode' not in db_url:
+            db_url += '?sslmode=require'
+        
+        # Create engine with proper pooling for cloud databases
         self.engine = create_async_engine(
-            settings.database_url.replace("postgresql://", "postgresql+asyncpg://"),
+            db_url,
             echo=settings.debug,
-            pool_size=20,
-            max_overflow=40
+            pool_size=10,
+            max_overflow=20,
+            pool_pre_ping=True,
+            pool_recycle=300,  # Recycle connections every 5 minutes
+            connect_args={
+                "server_settings": {"jit": "off"},  # Disable JIT for better compatibility
+                "command_timeout": 60,
+            } if 'supabase.co' in db_url else {}
         )
         
         # Create session factory

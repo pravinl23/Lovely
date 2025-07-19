@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     database_url: str = Field(..., description="PostgreSQL database URL")
     vector_db_url: Optional[str] = Field(None, description="Vector database URL")
     
+    # Supabase Configuration (for migration)
+    supabase_url: Optional[str] = Field(None, description="Supabase project URL")
+    supabase_anon_key: Optional[SecretStr] = Field(None, description="Supabase anonymous key")
+    supabase_service_role_key: Optional[SecretStr] = Field(None, description="Supabase service role key")
+    
     # Redis
     redis_url: str = Field(default="redis://localhost:6379/0")
     celery_broker_url: str = Field(default="redis://localhost:6379/1")
@@ -51,7 +56,7 @@ class Settings(BaseSettings):
     enable_audio_transcription: bool = Field(default=True)
     enable_image_captioning: bool = Field(default=True)
     max_concurrent_conversations: int = Field(default=10)
-    default_reply_delay_seconds: int = Field(default=5)  # Reduced from 30 to 5 seconds
+    default_reply_delay_seconds: int = Field(default=1)  # Reduced from 30 to 5 seconds
     
     # Rate Limiting
     rate_limit_messages_per_minute: int = Field(default=30)
