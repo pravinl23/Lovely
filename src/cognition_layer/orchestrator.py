@@ -5,6 +5,8 @@ import asyncio
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 import json
+import random
+import re
 
 from src.cognition_layer.memory_graph import MemoryGraph
 from src.cognition_layer.policy_gate import PolicyGate, PolicyDecision
@@ -229,12 +231,35 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
                 constraints=constraints
             )
             
-            # Send via WhatsApp
-            result = await self.whatsapp_client.send_whatsapp_message(
-                contact_id=contact.whatsapp_id,
-                message_type="text",
-                content=reply_text
-            )
+            # Parse multiple messages from the reply
+            messages_to_send = await self._parse_multiple_messages(reply_text)
+            
+            sent_message_ids = []
+            
+            # Send each message separately with delays
+            for i, msg_text in enumerate(messages_to_send):
+                if i > 0:
+                    # Add delay between messages (1-3 seconds)
+                    delay = random.uniform(1.0, 3.0)
+                    await asyncio.sleep(delay)
+                
+                # Send individual message
+                result = await self.whatsapp_client.send_whatsapp_message(
+                    contact_id=contact.whatsapp_id,
+                    message_type="text",
+                    content=msg_text
+                )
+                
+                if result and result.get("messages"):
+                    sent_message_ids.append(result["messages"][0].get("id"))
+                
+                # Store each outbound message
+                await self._store_outbound_message(
+                    contact=contact,
+                    reply_text=msg_text,
+                    whatsapp_message_id=result.get("messages", [{}])[0].get("id") if result else None,
+                    meta_tags=meta_tags if i == 0 else {}  # Only store meta_tags for first message
+                )
             
             # Update contact metrics
             await self.db_manager.update_contact_metrics(
@@ -242,17 +267,10 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
                 last_ai_reply_at=datetime.utcnow()
             )
             
-            # Store outbound message
-            await self._store_outbound_message(
-                contact=contact,
-                reply_text=reply_text,
-                whatsapp_message_id=result.get("messages", [{}])[0].get("id"),
-                meta_tags=meta_tags
-            )
-            
-            logger.info(f"Reply sent to contact {contact.id}", extra={
+            logger.info(f"Multiple replies sent to contact {contact.id}", extra={
                 "message_id": message.id,
-                "reply_length": len(reply_text),
+                "messages_sent": len(messages_to_send),
+                "total_length": len(reply_text),
                 "meta_tags": meta_tags
             })
             
@@ -276,6 +294,34 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
                 
         except Exception as e:
             logger.error(f"Failed to generate/send reply: {str(e)}", exc_info=True)
+    
+    async def _parse_multiple_messages(self, reply_text: str) -> List[str]:
+        """Parse reply text to extract multiple messages"""
+        try:
+            # Try to parse as JSON first
+            import json
+            data = json.loads(reply_text)
+            messages = data.get("messages", [])
+            if messages:
+                return [msg.strip() for msg in messages if msg.strip()]
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        
+        # Fallback: split by newlines or sentences if it's a regular text response
+        if '\n' in reply_text:
+            # Split by newlines
+            messages = [msg.strip() for msg in reply_text.split('\n') if msg.strip()]
+        else:
+            # Single message or split by sentences
+            import re
+            sentences = re.split(r'(?<=[.!?])\s+', reply_text.strip())
+            if len(sentences) > 1 and len(sentences) <= 3:
+                messages = [s.strip() for s in sentences if s.strip()]
+            else:
+                messages = [reply_text.strip()]
+        
+        # Ensure we don't send too many messages
+        return messages[:3] if messages else [reply_text.strip()]
     
     async def _store_outbound_message(
         self,

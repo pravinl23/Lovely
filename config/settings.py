@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     enable_audio_transcription: bool = Field(default=True)
     enable_image_captioning: bool = Field(default=True)
     max_concurrent_conversations: int = Field(default=10)
-    default_reply_delay_seconds: int = Field(default=30)
+    default_reply_delay_seconds: int = Field(default=5)  # Reduced from 30 to 5 seconds
     
     # Rate Limiting
     rate_limit_messages_per_minute: int = Field(default=30)
