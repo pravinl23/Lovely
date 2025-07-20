@@ -1,6 +1,6 @@
-# OBS Hotkey Controller
+# OBS Hotkey Controller with HeyGen Integration
 
-A Python script that automates OBS recording with custom commands and browser source control via global hotkeys.
+A Python script that automates OBS recording with custom commands, browser source control, and HeyGen knowledge base updates via global hotkeys.
 
 ## Features
 
@@ -8,6 +8,8 @@ A Python script that automates OBS recording with custom commands and browser so
 - 🎬 **Recording Control**: Start/stop recording automatically  
 - 👁️ **Source Visibility**: Show/hide browser sources
 - ⚡ **Custom Commands**: Run any command before/after recording
+- 🧠 **HeyGen Integration**: Automatically updates knowledge base with conversation history
+- 📊 **Supabase Integration**: Pulls conversation context from your database
 - 🔧 **Easy Configuration**: Simple config file setup
 
 ## Setup Instructions
@@ -29,10 +31,28 @@ pip install -r obs_requirements.txt
 
 Or manually:
 ```bash
-pip install obsws-python keyboard
+pip install obsws-python keyboard httpx
 ```
 
-### 3. Configure the Script
+### 3. Configure API Credentials
+
+**Set up HeyGen and Supabase credentials** in `obs_hotkey_controller.py`:
+
+```python
+# HeyGen API Configuration
+HEYGEN_API_KEY = "your_heygen_api_key_here"
+KNOWLEDGE_BASE_ID = "bfa1e9e954c44662836e4b98dab05766"
+
+# Supabase Configuration  
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_SERVICE_KEY = "your_service_role_key_here"
+```
+
+**Get your credentials:**
+- **HeyGen API Key**: Go to [HeyGen Settings > API](https://app.heygen.com/settings/api) and create a new key
+- **Supabase URL & Key**: Go to your Supabase project → Settings → API
+
+### 4. Configure the Script Settings
 
 Edit the configuration section in `obs_hotkey_controller.py`:
 
@@ -42,14 +62,14 @@ START_HOTKEY = "f9"     # Change to your preferred key
 STOP_HOTKEY = "f10"     # Change to your preferred key
 
 # Browser source name (must match exactly in OBS)
-BROWSER_SOURCE_NAME = "Browser Source"  # Change to your source name
+BROWSER_SOURCE_NAME = "Browser"  # Change to your source name
 
 # Commands to run
 START_COMMAND = ["echo", "Starting recording..."]  # Your start command
 STOP_COMMAND = ["echo", "Recording stopped."]     # Your stop command
 ```
 
-### 4. Run the Script
+### 5. Run the Script
 
 ```bash
 python obs_hotkey_controller.py
@@ -92,8 +112,9 @@ BROWSER_SOURCES = ["Browser Source 1", "Chat Overlay", "Alert Box"]
 
 **When you press the START hotkey (F9 by default):**
 1. ✅ Runs your custom start command
-2. 👁️ Makes browser source visible  
-3. 🎬 Starts OBS recording
+2. 🧠 **Updates HeyGen knowledge base** with conversation history from Supabase
+3. 👁️ Makes browser source visible  
+4. 🎬 Starts OBS recording
 
 **When you press the STOP hotkey (F10 by default):**
 1. 🛑 Stops OBS recording
@@ -134,6 +155,9 @@ BROWSER_SOURCES = ["Browser Source 1", "Chat Overlay", "Alert Box"]
 - OBS Studio 28.0+ (with WebSocket support)
 - `obsws-python` library
 - `keyboard` library
+- `httpx` library
+- HeyGen API account with API key
+- Supabase project with message data
 
 ## License
 
