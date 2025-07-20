@@ -21,14 +21,14 @@ except ImportError as e:
 # Configuration
 OBS_HOST = "localhost"
 OBS_PORT = 4455
-OBS_PASSWORD = ""  # Set if you have WebSocket password enabled
+OBS_PASSWORD = "uBbyri7iLbK4RYke"  # Set if you have WebSocket password enabled
 
 # Hotkey configuration
 START_HOTKEY = "f9"  # Change to your preferred key
 STOP_HOTKEY = "f10"  # Change to your preferred key
 
 # Browser source name (change to match your OBS source name)
-BROWSER_SOURCE_NAME = "Browser Source"
+BROWSER_SOURCE_NAME = "Browser"
 
 # Commands to run
 START_COMMAND = ["echo", "Starting recording..."]  # Replace with your command
@@ -72,16 +72,14 @@ class OBSController:
             
             # 2. Make browser source visible
             logger.info(f"Making '{BROWSER_SOURCE_NAME}' visible...")
-            self.client.set_source_filter_enabled(
-                source_name=BROWSER_SOURCE_NAME,
-                filter_name="",  # Empty for source itself
-                filter_enabled=True
-            )
-            # Alternative method - set source visibility
+            # Get current scene name
+            current_scene = self.client.get_current_program_scene()
+            scene_name = current_scene.current_program_scene_name
+            
             self.client.set_scene_item_enabled(
-                scene_name=None,  # Current scene
-                scene_item_id=self.get_source_id(BROWSER_SOURCE_NAME),
-                scene_item_enabled=True
+                scene_name,
+                self.get_source_id(BROWSER_SOURCE_NAME),
+                True
             )
             
             # 3. Start recording
@@ -107,10 +105,14 @@ class OBSController:
             
             # 2. Make browser source invisible
             logger.info(f"Making '{BROWSER_SOURCE_NAME}' invisible...")
+            # Get current scene name
+            current_scene = self.client.get_current_program_scene()
+            scene_name = current_scene.current_program_scene_name
+            
             self.client.set_scene_item_enabled(
-                scene_name=None,  # Current scene
-                scene_item_id=self.get_source_id(BROWSER_SOURCE_NAME),
-                scene_item_enabled=False
+                scene_name,
+                self.get_source_id(BROWSER_SOURCE_NAME),
+                False
             )
             
             # 3. Run stop command
@@ -131,7 +133,7 @@ class OBSController:
             scene_name = current_scene.current_program_scene_name
             
             # Get scene items
-            scene_items = self.client.get_scene_item_list(scene_name=scene_name)
+            scene_items = self.client.get_scene_item_list(scene_name)
             
             for item in scene_items.scene_items:
                 if item['sourceName'] == source_name:
