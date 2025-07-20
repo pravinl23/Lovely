@@ -1,0 +1,143 @@
+{
+  "name": "Ava",
+  "phone_number": "416",
+  "interests": [
+    "yoga and meditation",
+    "cooking and baking",
+    "art galleries",
+    "sustainable living",
+    "classical music"
+  ],
+  "personality": {
+    "traits": [
+      "thoughtful",
+      "creative",
+      "mindful",
+      "independent",
+      "cultured"
+    ],
+    "communication_style": "articulate and reflective",
+    "energy_level": "calm and steady"
+  },
+  "personal_info": {
+    "job": "art therapist",
+    "age": 26,
+    "location": "arts district",
+    "education": "psychology and fine arts",
+    "living_situation": "lives alone in a studio apartment"
+  },
+  "conversation_history": [
+    {
+      "date": "2024-01-16",
+      "topics": [
+        "art therapy work",
+        "mindfulness practices",
+        "favorite books"
+      ],
+      "mood": "contemplative",
+      "engagement": "high"
+    },
+    {
+      "date": "2024-01-19",
+      "topics": [
+        "cooking experiments",
+        "local art scene",
+        "personal growth"
+      ],
+      "mood": "inspired",
+      "engagement": "very high"
+    }
+  ],
+  "preferences": {
+    "tone": "thoughtful and genuine",
+    "topics": [
+      "art and creativity",
+      "personal development",
+      "food and culture",
+      "mindfulness"
+    ],
+    "avoid": [
+      "superficial conversations",
+      "gossip",
+      "negative energy"
+    ],
+    "date_ideas": [
+      "art gallery visit",
+      "cooking class together",
+      "meditation session",
+      "farmers market walk",
+      "classical concert"
+    ]
+  },
+  "facts_learned": [
+    "works as an art therapist helping people with trauma",
+    "practices yoga daily and teaches meditation",
+    "loves experimenting with new recipes",
+    "has traveled extensively in Europe",
+    "collects vintage cookbooks",
+    "lives in a converted warehouse studio",
+    "speaks three languages fluently"
+  ],
+  "last_topics": [
+    "her recent art therapy session",
+    "weekend cooking project",
+    "upcoming gallery opening"
+  ],
+  "unresolved_topics": [
+    {
+      "question": "How did her art therapy session go?",
+      "context": "She mentioned having a challenging session with a client"
+    },
+    {
+      "question": "What's her favorite type of cuisine to cook?",
+      "context": "We discussed her love for cooking and trying new recipes"
+    }
+  ],
+  "boundaries": [
+    "values deep, meaningful conversations",
+    "needs time to process and reflect",
+    "appreciates authenticity over small talk",
+    "prefers quality over quantity in relationships"
+  ],
+  "engagement_metrics": {
+    "response_latency_avg": 45.8,
+    "message_length_avg": 35,
+    "emoji_usage": "minimal",
+    "initiation_frequency": "thoughtful"
+  },
+  "progression_stage": "discovery",
+  "last_interaction": "2024-01-19",
+  "next_suggested_action": "ask about her art therapy work and show genuine interest",
+  "conversation_logs": [
+    {
+      "timestamp": "2025-07-20T05:36:58.518345",
+      "transcript": "Hello, how are you?",
+      "response": "Hi Ava! I'm doing well, thanks for asking. How about you? I\u2019ve been curious\u2014how did your recent art therapy session go? I imagine it must be rewarding to see the impact your work has.",
+      "context": ""
+    },
+    {
+      "timestamp": "2025-07-20T05:43:51.462773",
+      "transcript": " And hello, I am Praveen, I like one hiking.",
+      "response": "Hey Ava, it's great to chat with you! I'm genuinely curious\u2014how did your recent art therapy session go? It must be incredibly rewarding to help people through art. Also, if you\u2019re planning any new recipes for the weekend, I'd love to hear about them!",
+      "context": ""
+    },
+    {
+      "timestamp": "2025-07-20T05:55:51.844748",
+      "transcript": "Hello, how are you?",
+      "response": "Hi Ava! I'm doing well, thanks for asking. How about you? Did your recent art therapy session turn out as impactful as you hoped? I'm always curious to hear about the amazing work you do.",
+      "context": ""
+    },
+    {
+      "timestamp": "2025-07-20T09:15:08.577879",
+      "transcript": " My favorite color is purple.",
+      "response": "Purple is such a rich and creative color\u2014it totally suits your artistic side! Speaking of creativity, how did your recent art therapy session go?",
+      "context": ""
+    },
+    {
+      "timestamp": "2025-07-20T09:16:57.829717",
+      "transcript": " \u0441\u0442\u0430\u043b\u0438Z Far too strong tonesk \u0433\u0440 Pin \u043e\u0447\u0435\u043d\u044c mexican",
+      "response": "\"Mexican cuisine! That sounds like a fun challenge. \ud83c\udf2e I\u2019d love to hear what you made. Were you experimenting with any new spices or techniques?\"",
+      "context": ""
+    }
+  ]
+}
