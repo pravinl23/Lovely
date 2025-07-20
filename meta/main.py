@@ -1,16 +1,37 @@
-from mic_to_text import record_audio, transcribe_audio
+from live_buffer import audio_stream, save_buffer_to_wav, stop_audio_stream
 from assistant import get_reply
+from mic_to_text import transcribe_audio
 from speak import speak
+import threading
+import time
 
-while True:
-    input("Press Enter to record her for 10 seconds...\n")
+# Start background mic buffer thread
+audio_thread = threading.Thread(target=audio_stream, daemon=True)
+audio_thread.start()
 
-    record_audio()
+# Give the audio stream time to initialize
+time.sleep(1)
 
-    her_line = transcribe_audio()
-    print("She said:", her_line)
+print("Always listening... Press Enter to trigger RizzBot.\n")
 
-    response = get_reply(her_line)
-    print("RizzBot says:", response)
+try:
+    while True:
+        input("Tap to respond to last 10 seconds...\n")
 
-    speak(response)
+        # Save last 10 seconds of mic input
+        if save_buffer_to_wav():
+            # Transcribe + respond
+            her_line = transcribe_audio()
+            print("She said:", her_line)
+
+            response = get_reply(her_line)
+            print("RizzBot says:", response)
+
+            speak(response)
+        else:
+            print("No audio captured - try speaking louder")
+
+except KeyboardInterrupt:
+    print("\nStopping audio buffer...")
+    stop_audio_stream()
+    print("Goodbye!")
