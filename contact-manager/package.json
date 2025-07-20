@@ -12,6 +12,8 @@
     "@supabase/supabase-js": "^2.52.0",
     "expo": "~53.0.20",
     "expo-status-bar": "~2.2.3",
+    "expo-av": "~15.1.7",
+    "expo-file-system": "~17.0.0",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-dotenv": "^3.4.11",

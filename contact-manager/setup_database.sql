@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
 -- Insert demo contacts
 INSERT INTO contacts (name, phone_number, knowledge_file) VALUES
   ('Bob', '647', 'bob.json'),
-  ('Isabella', '416', 'isabella.json'),
+  ('Ava', '416', 'Ava.json'),
   ('Adam', '289', 'adam.json')
 ON CONFLICT (phone_number) DO NOTHING;
 

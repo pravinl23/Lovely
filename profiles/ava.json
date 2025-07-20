@@ -1,5 +1,5 @@
 {
-  "name": "Isabella",
+  "name": "Ava",
   "phone_number": "416",
   "interests": [
     "yoga and meditation",
@@ -29,21 +29,38 @@
   "conversation_history": [
     {
       "date": "2024-01-16",
-      "topics": ["art therapy work", "mindfulness practices", "favorite books"],
+      "topics": [
+        "art therapy work",
+        "mindfulness practices",
+        "favorite books"
+      ],
       "mood": "contemplative",
       "engagement": "high"
     },
     {
       "date": "2024-01-19",
-      "topics": ["cooking experiments", "local art scene", "personal growth"],
+      "topics": [
+        "cooking experiments",
+        "local art scene",
+        "personal growth"
+      ],
       "mood": "inspired",
       "engagement": "very high"
     }
   ],
   "preferences": {
     "tone": "thoughtful and genuine",
-    "topics": ["art and creativity", "personal development", "food and culture", "mindfulness"],
-    "avoid": ["superficial conversations", "gossip", "negative energy"],
+    "topics": [
+      "art and creativity",
+      "personal development",
+      "food and culture",
+      "mindfulness"
+    ],
+    "avoid": [
+      "superficial conversations",
+      "gossip",
+      "negative energy"
+    ],
     "date_ideas": [
       "art gallery visit",
       "cooking class together",
@@ -90,5 +107,19 @@
   },
   "progression_stage": "discovery",
   "last_interaction": "2024-01-19",
-  "next_suggested_action": "ask about her art therapy work and show genuine interest"
-} 
+  "next_suggested_action": "ask about her art therapy work and show genuine interest",
+  "conversation_logs": [
+    {
+      "timestamp": "2025-07-20T05:36:58.518345",
+      "transcript": "Hello, how are you?",
+      "response": "Hi Ava! I'm doing well, thanks for asking. How about you? I\u2019ve been curious\u2014how did your recent art therapy session go? I imagine it must be rewarding to see the impact your work has.",
+      "context": ""
+    },
+    {
+      "timestamp": "2025-07-20T05:43:51.462773",
+      "transcript": " And hello, I am Praveen, I like one hiking.",
+      "response": "Hey Ava, it's great to chat with you! I'm genuinely curious\u2014how did your recent art therapy session go? It must be incredibly rewarding to help people through art. Also, if you\u2019re planning any new recipes for the weekend, I'd love to hear about them!",
+      "context": ""
+    }
+  ]
+}

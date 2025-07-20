@@ -11,7 +11,7 @@ export const CONFIG = {
   // Contact Mapping (hardcoded for demo)
   CONTACT_MAPPING: {
     '647': { name: 'Bob', knowledgeFile: 'bob.json' },
-    '416': { name: 'Isabella', knowledgeFile: 'isabella.json' },
+    '416': { name: 'Ava', knowledgeFile: 'Ava.json' },
     '289': { name: 'Adam', knowledgeFile: 'adam.json' }
   },
   

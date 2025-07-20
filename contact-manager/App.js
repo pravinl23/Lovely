@@ -1,159 +1,227 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { Icon } from 'react-native-elements';
+import { Audio } from 'expo-av';
 
 export default function App() {
-  const [contacts, setContacts] = useState([]);
-  const [starredContact, setStarredContact] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  
+  const recording = useRef(null);
 
   useEffect(() => {
-    // Initialize with demo contacts
-    const demoContacts = [
-      {
-        id: 647,
-        name: 'Bob',
-        phone_number: '647',
-        knowledge_file: 'bob.json',
-        is_whitelisted: false
-      },
-      {
-        id: 416,
-        name: 'Isabella',
-        phone_number: '416',
-        knowledge_file: 'isabella.json',
-        is_whitelisted: false
-      },
-      {
-        id: 289,
-        name: 'Adam',
-        phone_number: '289',
-        knowledge_file: 'adam.json',
-        is_whitelisted: false
-      }
-    ];
+    // Request audio permissions
+    requestAudioPermissions();
     
-    setContacts(demoContacts);
-    setLoading(false);
+
   }, []);
 
-  const toggleWhitelist = (contactId) => {
-    setContacts(prev => prev.map(c => 
-      c.id === contactId ? { ...c, is_whitelisted: !c.is_whitelisted } : c
-    ));
-    
-    const contact = contacts.find(c => c.id === contactId);
-    const newStatus = !contact.is_whitelisted;
-    Alert.alert(
-      'Success', 
-      `${contact.name} ${newStatus ? 'whitelisted' : 'removed from whitelist'}`
-    );
-  };
-
-  const toggleStar = (contactId) => {
-    const contact = contacts.find(c => c.id === contactId);
-    const isCurrentlyStarred = starredContact === contactId;
-    
-    if (isCurrentlyStarred) {
-      setStarredContact(null);
-      Alert.alert('Success', 'No active date selected');
-    } else {
-      setStarredContact(contactId);
-      Alert.alert('Success', `${contact.name} is now your active date!`);
+  const requestAudioPermissions = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Audio recording permission is required for the date feature');
+      }
+    } catch (error) {
+      console.error('Error requesting audio permissions:', error);
     }
   };
 
-  const renderContact = ({ item }) => {
-    const isStarred = starredContact === item.id;
-    
-    return (
-      <View style={styles.contactItem}>
-        <View style={styles.contactInfo}>
-          <Text style={styles.contactName}>{item.name}</Text>
-          <Text style={styles.contactPhone}>{item.phone_number}</Text>
-          <Text style={styles.knowledgeFile}>Knowledge: {item.knowledge_file}</Text>
-        </View>
-        
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.button,
-              item.is_whitelisted ? styles.whitelistedButton : styles.whitelistButton
-            ]}
-            onPress={() => toggleWhitelist(item.id)}
-          >
-            <Icon
-              name={item.is_whitelisted ? 'check-circle' : 'add-circle-outline'}
-              type="material"
-              color={item.is_whitelisted ? '#4CAF50' : '#666'}
-              size={24}
-            />
-            <Text style={[
-              styles.buttonText,
-              item.is_whitelisted ? styles.whitelistedText : styles.whitelistText
-            ]}>
-              {item.is_whitelisted ? 'Whitelisted' : 'Whitelist'}
-            </Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.button,
-              isStarred ? styles.starredButton : styles.starButton
-            ]}
-            onPress={() => toggleStar(item.id)}
-          >
-            <Icon
-              name={isStarred ? 'star' : 'star-border'}
-              type="material"
-              color={isStarred ? '#FFD700' : '#666'}
-              size={24}
-            />
-            <Text style={[
-              styles.buttonText,
-              isStarred ? styles.starredText : styles.starText
-            ]}>
-              {isStarred ? 'Active Date' : 'Star'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+
+  const startRecording = async () => {
+    try {
+      setIsRecording(true);
+      
+      // Configure audio recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      recording.current = newRecording;
+      
+      console.log('🎤 Recording started');
+      
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      setIsRecording(false);
+      Alert.alert('Error', 'Failed to start recording');
+    }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading contacts...</Text>
-      </View>
-    );
-  }
+  const stopRecording = async () => {
+    try {
+      if (!recording.current) return;
+      
+      await recording.current.stopAndUnloadAsync();
+      const uri = recording.current.getURI();
+      recording.current = null;
+      
+      setIsRecording(false);
+      console.log('🎤 Recording stopped');
+      
+      return uri;
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+      setIsRecording(false);
+      return null;
+    }
+  };
+
+  const generateRizz = async () => {
+    if (!recording.current) {
+      Alert.alert('Error', 'No active recording. Please start recording first.');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      // Stop recording and get the audio file
+      const audioUri = await stopRecording();
+      if (!audioUri) {
+        Alert.alert('Error', 'Failed to get audio recording');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create form data for API
+      const formData = new FormData();
+      
+      // Get the file extension from the URI
+      const fileExtension = audioUri.split('.').pop() || 'wav';
+      const mimeType = `audio/${fileExtension}`;
+      
+      console.log('🎤 Audio file details:', {
+        uri: audioUri,
+        type: mimeType,
+        name: `recording.${fileExtension}`
+      });
+      
+      formData.append('audio_file', {
+        uri: audioUri,
+        type: mimeType,
+        name: `recording.${fileExtension}`
+      });
+
+      // Try different ports for the API
+      const ports = [8000, 8001, 8002, 8003, 8004];
+      const apiHost = '198.96.35.187'; // Your computer's IP address
+      let response = null;
+      let data = null;
+
+      for (const port of ports) {
+        try {
+          response = await fetch(`http://${apiHost}:${port}/rizz`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          data = await response.json();
+          console.log(`✅ Connected to API on ${apiHost}:${port}`);
+          break;
+        } catch (error) {
+          console.log(`Port ${port} not available:`, error.message);
+          continue;
+        }
+      }
+
+      if (!data) {
+        throw new Error('Could not connect to API on any port');
+      }
+      
+      if (data.success) {
+        Alert.alert(
+          '🎯 Rizz Generated!', 
+          `They said: "${data.transcript}"\n\nYour rizz: "${data.rizz}"\n\nCheck your glasses for the spoken response!`,
+          [
+            { text: 'OK' },
+            { text: 'Get Another Rizz', onPress: () => startRecording() }
+          ]
+        );
+      } else {
+        Alert.alert('Error', data.message || 'Failed to generate rizz');
+      }
+
+    } catch (error) {
+      console.error('Error getting rizz:', error);
+      Alert.alert('Error', 'Failed to connect to RizzBot API. Make sure the server is running.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMainButtonPress = () => {
+    if (isRecording) {
+      generateRizz();
+    } else {
+      startRecording();
+    }
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
       
       <View style={styles.header}>
-        <Text style={styles.title}>Contact Manager</Text>
-        <Text style={styles.subtitle}>Manage your WhatsApp contacts</Text>
+        <Text style={styles.title}>Date Assistant</Text>
+        <Text style={styles.subtitle}>Know what to say on a date</Text>
       </View>
 
-      {starredContact && (
-        <View style={styles.activeDateContainer}>
-          <Icon name="star" type="material" color="#FFD700" size={20} />
-          <Text style={styles.activeDateText}>
-            Active Date: {contacts.find(c => c.id === starredContact)?.name}
-          </Text>
-        </View>
-      )}
 
-      <FlatList
-        data={contacts}
-        renderItem={renderContact}
-        keyExtractor={(item) => item.id.toString()}
-        style={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+
+      {/* Main Date Button */}
+      <View style={styles.mainButtonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.mainButton,
+            isRecording && styles.recordingButton,
+            isProcessing && styles.processingButton
+          ]}
+          onPress={handleMainButtonPress}
+          disabled={isProcessing}
+        >
+          <Icon
+            name={isRecording ? 'stop' : 'mic'}
+            type="material"
+            color="#fff"
+            size={48}
+          />
+          <Text style={styles.mainButtonText}>
+            {isProcessing ? 'Processing...' : 
+             isRecording ? 'Generate Rizz!' : 'Start Date'}
+          </Text>
+        </TouchableOpacity>
+
+        {isRecording && (
+          <Text style={styles.recordingStatus}>
+            🎤 Recording... Tap "Generate Rizz!" when you need help
+          </Text>
+        )}
+
+        {!isRecording && !isProcessing && (
+          <Text style={styles.instructions}>
+            Tap to start recording your date conversation
+          </Text>
+        )}
+      </View>
+
+      {/* Status Info */}
+      <View style={styles.statusContainer}>
+        <Text style={styles.statusTitle}>How it works:</Text>
+        <Text style={styles.statusText}>1. Tap "Start Date" to begin recording</Text>
+        <Text style={styles.statusText}>2. Have your conversation naturally</Text>
+        <Text style={styles.statusText}>3. Tap "Generate Rizz!" when you need help</Text>
+        <Text style={styles.statusText}>4. Listen to the response through your glasses</Text>
+      </View>
     </View>
   );
 }
@@ -163,16 +231,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#666',
-  },
   header: {
     padding: 20,
     paddingTop: 60,
@@ -181,39 +239,75 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 5,
+    textAlign: 'center',
   },
   subtitle: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+  },
+
+  mainButtonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  mainButton: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    paddingVertical: 30,
+    paddingHorizontal: 40,
+    borderRadius: 50,
+    minWidth: 200,
+    minHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  recordingButton: {
+    backgroundColor: '#FF3B30',
+  },
+  processingButton: {
+    backgroundColor: '#FF9500',
+  },
+  mainButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  recordingStatus: {
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  instructions: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
+    paddingHorizontal: 20,
   },
-  activeDateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF3CD',
-    padding: 15,
-    margin: 15,
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFD700',
-  },
-  activeDateText: {
-    marginLeft: 10,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#856404',
-  },
-  list: {
-    flex: 1,
-    paddingHorizontal: 15,
-  },
-  contactItem: {
+  statusContainer: {
     backgroundColor: '#fff',
     padding: 20,
-    marginVertical: 8,
+    margin: 15,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
@@ -224,73 +318,17 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  contactInfo: {
-    marginBottom: 15,
-  },
-  contactName: {
-    fontSize: 20,
+  statusTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 10,
+    textAlign: 'center',
   },
-  contactPhone: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 5,
-  },
-  knowledgeFile: {
+  statusText: {
     fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    flex: 0.48,
-    justifyContent: 'center',
-  },
-  whitelistButton: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  whitelistedButton: {
-    backgroundColor: '#E8F5E8',
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-  },
-  starButton: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  starredButton: {
-    backgroundColor: '#FFF8DC',
-    borderWidth: 1,
-    borderColor: '#FFD700',
-  },
-  buttonText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  whitelistText: {
     color: '#666',
-  },
-  whitelistedText: {
-    color: '#4CAF50',
-  },
-  starText: {
-    color: '#666',
-  },
-  starredText: {
-    color: '#B8860B',
+    marginBottom: 5,
+    textAlign: 'center',
   },
 });
