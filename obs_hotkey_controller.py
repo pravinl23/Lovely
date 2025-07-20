@@ -45,8 +45,8 @@ STOP_COMMAND = ["echo", "Recording stopped."]     # Replace with your command
 # HeyGen and Supabase Configuration (loaded from .env)
 HEYGEN_API_KEY = os.getenv("HEYGEN_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL") 
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-KNOWLEDGE_BASE_ID = "bfa1e9e954c44662836e4b98dab05766"  # Your HeyGen knowledge base ID
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+KNOWLEDGE_BASE_ID = "7539c5f570384a9c819eac8b19503b34"  # Your HeyGen knowledge base ID
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
