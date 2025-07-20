@@ -5,11 +5,9 @@ services:
     build: .
     ports:
       - "8000:8000"
-      - "9090:9090"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/whatsapp_automation
       - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
       - ENVIRONMENT=development
     env_file:
       - .env
@@ -39,61 +37,6 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
-
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
-
-  # Optional: Celery worker for background tasks
-  celery:
-    build: .
-    command: celery -A src.core.celery_app worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/whatsapp_automation
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./src:/app/src
-      - ./config:/app/config
-
-  # Optional: Celery beat for scheduled tasks
-  celery-beat:
-    build: .
-    command: celery -A src.core.celery_app beat --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/whatsapp_automation
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./src:/app/src
-      - ./config:/app/config
-
-  # Optional: Flower for Celery monitoring
-  flower:
-    build: .
-    command: celery -A src.core.celery_app flower
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/1
-    ports:
-      - "5555:5555"
-    depends_on:
-      - redis
 
 volumes:
   postgres_data:

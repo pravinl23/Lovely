@@ -11,9 +11,8 @@ import re
 from src.cognition_layer.memory_graph import MemoryGraph
 from src.cognition_layer.policy_gate import PolicyGate, PolicyDecision
 from src.cognition_layer.reply_generator import ReplyGenerator
-from src.cognition_layer.briefing_generator import BriefingGenerator
-from src.persistence_layer.db_manager import DatabaseManager
-from src.persistence_layer.models import Contact, Message, ProgressionStage, User
+
+from src.persistence_layer.supabase_manager import SupabaseManager
 from src.api_control_plane.whatsapp_client import WhatsAppClient, TokenExpiredError
 from src.core.message_queue import QueueMessage
 from src.utils.logging import get_logger
@@ -26,11 +25,10 @@ class CognitiveOrchestrator:
     """Orchestrates cognitive processing of messages"""
     
     def __init__(self):
-        self.db_manager = DatabaseManager()
+        self.db_manager = SupabaseManager()
         self.memory_graph = MemoryGraph()
         self.policy_gate = PolicyGate()
         self.reply_generator = ReplyGenerator()
-        self.briefing_generator = BriefingGenerator()
         self.whatsapp_client = WhatsAppClient()
         
         # Track active conversations to prevent duplicate processing
@@ -41,7 +39,6 @@ class CognitiveOrchestrator:
         await self.memory_graph.__aenter__()
         await self.policy_gate.__aenter__()
         await self.reply_generator.__aenter__()
-        await self.briefing_generator.__aenter__()
         await self.whatsapp_client.__aenter__()
         return self
         
@@ -50,7 +47,6 @@ class CognitiveOrchestrator:
         await self.memory_graph.__aexit__(exc_type, exc_val, exc_tb)
         await self.policy_gate.__aexit__(exc_type, exc_val, exc_tb)
         await self.reply_generator.__aexit__(exc_type, exc_val, exc_tb)
-        await self.briefing_generator.__aexit__(exc_type, exc_val, exc_tb)
         await self.whatsapp_client.__aexit__(exc_type, exc_val, exc_tb)
     
     async def process_cognitive_task(self, queue_message: QueueMessage):
@@ -89,55 +85,49 @@ class CognitiveOrchestrator:
         # Small delay to ensure database transaction has committed
         await asyncio.sleep(0.5)
         
-        # Get message from database
-        async with self.db_manager.async_session() as session:
-            from sqlalchemy import select
-            result = await session.execute(
-                select(Message).where(Message.whatsapp_message_id == message_id)
-            )
-            message = result.scalar_one_or_none()
-            if not message:
-                logger.error(f"Message not found: {message_id}")
-                return
-            
-            contact = await session.get(Contact, message.contact_id)
-            if not contact:
-                logger.error(f"Contact not found for message: {message_id}")
-                return
-            
-            from src.persistence_layer.models import User
-            user = await session.get(User, contact.user_id)
-            if not user:
-                logger.error(f"User not found for contact: {contact.id}")
-                return
+        # Get message from database using SupabaseManager
+        message = await self.db_manager.get_message_by_whatsapp_id(message_id)
+        if not message:
+            logger.error(f"Message not found: {message_id}")
+            return
+        
+        contact = await self.db_manager.get_contact_by_id(message['contact_id'])
+        if not contact:
+            logger.error(f"Contact not found for message: {message_id}")
+            return
+        
+        user = await self.db_manager.get_user_by_id(contact['user_id'])
+        if not user:
+            logger.error(f"User not found for contact: {contact['id']}")
+            return
         
         # Update memory graph with fact extraction
-        await self._update_memory(contact.id, message)
+        await self._update_memory(contact['id'], message)
         
         # Check policy for reply permission
         # Reconstruct annotations from database fields
         from src.perception_layer.models import MessageAnnotations, Sentiment, Intent
         annotations = None
-        if message.sentiment or message.extracted_intents_json or message.extracted_entities_json:
+        if message.get('sentiment') or message.get('extracted_intents_json') or message.get('extracted_entities_json'):
             annotations = MessageAnnotations()
             
             # Reconstruct sentiment
-            if message.sentiment:
+            if message.get('sentiment'):
                 try:
-                    annotations.sentiment = Sentiment(message.sentiment)
+                    annotations.sentiment = Sentiment(message['sentiment'])
                 except ValueError:
                     annotations.sentiment = Sentiment.NEUTRAL
             
             # Reconstruct intents
-            if message.extracted_intents_json:
-                for intent_str in message.extracted_intents_json:
+            if message.get('extracted_intents_json'):
+                for intent_str in message['extracted_intents_json']:
                     try:
                         annotations.intents.append(Intent(intent_str))
                     except ValueError:
                         pass
         
         decision, reason = await self.policy_gate.evaluate_reply_permission(
-            contact_id=contact.id,
+            contact_id=contact['id'],
             message=message,
             annotations=annotations
         )
@@ -155,15 +145,15 @@ class CognitiveOrchestrator:
             
         elif decision == PolicyDecision.DEFER_HUMAN_REVIEW:
             # Just log for now - no email notifications
-            logger.info(f"Message requires human review for contact {contact.id}: {reason}")
+            logger.info(f"Message requires human review for contact {contact['id']}: {reason}")
             
         else:
-            logger.info(f"Reply blocked for contact {contact.id}: {reason}")
+            logger.info(f"Reply blocked for contact {contact['id']}: {reason}")
         
         # Check for stage transitions
         await self._check_stage_transitions(contact, message)
     
-    async def _update_memory(self, contact_id: int, message: Message):
+    async def _update_memory(self, contact_id: int, message: Dict[str, Any]):
         """Update memory graph from new message"""
         # Use LLM to extract fact deltas
         llm_extraction = await self._extract_facts_from_message(contact_id, message)
@@ -171,45 +161,26 @@ class CognitiveOrchestrator:
         # Update memory graph
         await self.memory_graph.update_memory_from_message(
             contact_id=contact_id,
-            message_id=message.id,
+            message_id=message['id'],
             llm_extraction=llm_extraction
         )
     
     async def _extract_facts_from_message(
         self, 
         contact_id: int, 
-        message: Message
+        message: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Extract facts using LLM"""
-        if not message.text_content:
+        if not message.get('text_content'):
             return {"new_facts": [], "reinforced_facts": [], "conflicts_updates": []}
         
         # Get existing facts for context
         facts = await self.db_manager.get_contact_facts(contact_id, limit=20)
         existing_facts_text = "\n".join([
-            f"- {fact.key}: {fact.value}" for fact in facts
+            f"- {fact['key']}: {fact['value']}" for fact in facts
         ])
         
-        prompt = f"""You are updating a knowledge base about a person based on a new WhatsApp message.
-
-Current known facts about the person:
-{existing_facts_text if existing_facts_text else "No existing facts"}
-
-New WhatsApp message: "{message.text_content}"
-
-Based on the new message:
-1. **New Assertions:** Identify any new facts about the person. Format as JSON: {{"key": "fact_type", "value": "fact_value"}}
-2. **Reinforcements:** Which existing facts are confirmed? List just the keys.
-3. **Conflicts/Updates:** If any existing facts are contradicted, provide: {{"key": "fact_key", "old_value": "old", "new_value": "new"}}
-
-Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_updates"""
-
-        # Call LLM (simplified - would use proper LLM integration)
-        if settings.llm_provider == "openai":
-            # Would call OpenAI here
-            pass
-        
-        # For now, return empty extraction
+        # Placeholder for fact extraction - would use OpenAI in production
         return {
             "new_facts": [],
             "reinforced_facts": [],
@@ -218,16 +189,16 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
     
     async def _generate_and_send_reply(
         self,
-        contact: Contact,
-        message: Message,
+        contact: Dict[str, Any],
+        message: Dict[str, Any],
         constraints: Dict[str, Any]
     ):
         """Generate and send a reply"""
         try:
             # Generate reply
             reply_text, meta_tags = await self.reply_generator.generate_reply(
-                contact_id=contact.id,
-                message_id=message.id,
+                contact_id=contact['id'],
+                message_id=message['id'],
                 constraints=constraints
             )
             
@@ -245,7 +216,7 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
                 
                 # Send individual message
                 result = await self.whatsapp_client.send_whatsapp_message(
-                    contact_id=contact.whatsapp_id,
+                    contact_id=contact['whatsapp_id'],
                     message_type="text",
                     content=msg_text
                 )
@@ -263,12 +234,12 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
             
             # Update contact metrics
             await self.db_manager.update_contact_metrics(
-                contact_id=contact.id,
+                contact_id=contact['id'],
                 last_ai_reply_at=datetime.utcnow()
             )
             
-            logger.info(f"Multiple replies sent to contact {contact.id}", extra={
-                "message_id": message.id,
+            logger.info(f"Multiple replies sent to contact {contact['id']}", extra={
+                "message_id": message['id'],
                 "messages_sent": len(messages_to_send),
                 "total_length": len(reply_text),
                 "meta_tags": meta_tags
@@ -276,7 +247,7 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
             
         except TokenExpiredError as e:
             logger.error("="*80)
-            logger.error("🚨 WHATSAPP ACCESS TOKEN EXPIRED")
+            logger.error(" WHATSAPP ACCESS TOKEN EXPIRED")
             logger.error("="*80)
             logger.error("Your WhatsApp access token has expired and needs to be refreshed.")
             logger.error("")
@@ -325,7 +296,7 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
     
     async def _store_outbound_message(
         self,
-        contact: Contact,
+        contact: Dict[str, Any],
         reply_text: str,
         whatsapp_message_id: str,
         meta_tags: Dict[str, Any]
@@ -336,9 +307,9 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
         # Create message record
         message = PerceptionMessage(
             message_id=whatsapp_message_id,
-            conversation_id=contact.whatsapp_id,
-            sender_id=contact.user_id,  # Our system
-            receiver_id=contact.whatsapp_id,
+            conversation_id=contact['whatsapp_id'],
+            sender_id=contact['user_id'],  # Our system
+            receiver_id=contact['whatsapp_id'],
             timestamp=datetime.utcnow(),
             text_content=reply_text,
             is_inbound=False
@@ -350,15 +321,16 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
         # Update reply status
         # Would update OutboundReply status to "sent" here
     
-    async def _check_stage_transitions(self, contact: Contact, message: Message):
+    async def _check_stage_transitions(self, contact: Dict[str, Any], message: Dict[str, Any]):
         """Check for stage transitions and trigger actions"""
         # Get updated contact with latest stage
-        async with self.db_manager.async_session() as session:
-            contact = await session.get(Contact, contact.id)
+        updated_contact = await self.db_manager.get_contact_by_id(contact['id'])
+        if not updated_contact:
+            return
             
-            # Just log stage transitions for now - no email briefings
-            if contact.progression_stage == ProgressionStage.CONFIRMATION:
-                logger.info(f"Contact {contact.id} reached confirmation stage")
+        # Just log stage transitions for now - no email briefings
+        if updated_contact.get('progression_stage') == 'confirmation':
+            logger.info(f"Contact {contact['id']} reached confirmation stage")
     
     async def _get_recent_briefings(self, contact_id: int) -> List[Any]:
         """Get recent briefings for a contact"""
@@ -370,10 +342,9 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
         contact_id = data.get("contact_id")
         
         # Get contact
-        async with self.db_manager.async_session() as session:
-            contact = await session.get(Contact, contact_id)
-            if not contact or not contact.ai_enabled:
-                return
+        contact = await self.db_manager.get_contact_by_id(contact_id)
+        if not contact or not contact.get('ai_enabled'):
+            return
         
         # Check if follow-up is appropriate
         if not await self._should_send_followup(contact):
@@ -383,13 +354,22 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
         # This would be more sophisticated in production
         logger.info(f"Scheduled check for contact {contact_id} - no action taken")
     
-    async def _should_send_followup(self, contact: Contact) -> bool:
+    async def _should_send_followup(self, contact: Dict[str, Any]) -> bool:
         """Determine if a follow-up message is appropriate"""
-        if not contact.last_inbound_message_at:
+        if not contact.get('last_inbound_message_at'):
             return False
             
+        # Parse the timestamp string to datetime
+        from datetime import datetime, timezone
+        last_message_at = datetime.fromisoformat(contact['last_inbound_message_at'].replace('Z', '+00:00'))
+        
+        # Make both datetimes timezone-aware
+        now = datetime.utcnow().replace(tzinfo=timezone.utc)
+        if last_message_at.tzinfo is None:
+            last_message_at = last_message_at.replace(tzinfo=timezone.utc)
+        
         # Don't follow up if recent activity
-        time_since_last = datetime.utcnow() - contact.last_inbound_message_at
+        time_since_last = now - last_message_at
         if time_since_last < timedelta(hours=12):
             return False
             
@@ -398,7 +378,7 @@ Provide output in JSON format with keys: new_facts, reinforced_facts, conflicts_
             return False
             
         # Check stage-specific rules
-        if contact.progression_stage in [ProgressionStage.NEGOTIATION, ProgressionStage.CONFIRMATION]:
+        if contact.get('progression_stage') in ['negotiation', 'confirmation']:
             # More careful in sensitive stages
             return False
             

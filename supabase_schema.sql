@@ -1,12 +1,14 @@
 -- Supabase Schema for WhatsApp AI Assistant
 -- Drop existing tables if they exist (careful in production!)
 DROP TABLE IF EXISTS message_embeddings CASCADE;
-DROP TABLE IF EXISTS briefings CASCADE;
 DROP TABLE IF EXISTS outbound_replies CASCADE;
 DROP TABLE IF EXISTS facts CASCADE;
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS contacts CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+
+-- Drop existing enum type if it exists
+DROP TYPE IF EXISTS progression_stage CASCADE;
 
 -- Create custom enum type for progression stages
 CREATE TYPE progression_stage AS ENUM (
@@ -114,18 +116,7 @@ CREATE TABLE outbound_replies (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Briefings table
-CREATE TABLE briefings (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
-    
-    stage_snapshot_json JSONB NOT NULL,
-    briefing_text TEXT NOT NULL,
-    email_sent_at TIMESTAMP WITH TIME ZONE,
-    
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+
 
 -- Message embeddings table
 CREATE TABLE message_embeddings (
@@ -174,7 +165,7 @@ ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE facts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE outbound_replies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE briefings ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE message_embeddings ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS policies (adjust based on your auth needs)
@@ -200,4 +191,4 @@ CREATE POLICY "Users can view own messages" ON messages
 
 -- Create a default user (REMOVE IN PRODUCTION)
 INSERT INTO users (email, hashed_password, whatsapp_phone_number_id, global_automation_enabled)
-VALUES ('default@example.com', 'placeholder_hash', '778423268682492', true); 
+VALUES ('default@example.com', 'placeholder_hash', '[YOUR-WHATSAPP-PHONE-NUMBER-ID]', true); 

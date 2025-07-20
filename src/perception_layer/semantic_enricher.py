@@ -85,12 +85,7 @@ Message: "{message_text}"
 
 Provide the output in JSON format with keys: intents, entities, temporal_mentions, sentiment, key_phrases, questions."""
 
-        if settings.llm_provider == "openai":
-            return await self._call_openai(prompt)
-        elif settings.llm_provider == "anthropic":
-            return await self._call_anthropic(prompt)
-        else:
-            raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")
+        return await self._call_openai(prompt)
     
     async def _call_openai(self, prompt: str) -> Dict[str, Any]:
         """Call OpenAI API for extraction"""
@@ -119,45 +114,7 @@ Provide the output in JSON format with keys: intents, entities, temporal_mention
         except json.JSONDecodeError:
             logger.error("Failed to parse LLM response as JSON")
             return {}
-    
-    async def _call_anthropic(self, prompt: str) -> Dict[str, Any]:
-        """Call Anthropic API for extraction"""
-        response = await self.httpx_client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": settings.anthropic_api_key.get_secret_value(),
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "claude-3-haiku-20240307",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": f"{prompt}\n\nRemember to respond with valid JSON only."
-                    }
-                ],
-                "temperature": 0.1,
-                "max_tokens": 1000
-            }
-        )
-        
-        response.raise_for_status()
-        result = response.json()
-        
-        try:
-            # Extract JSON from Claude's response
-            content = result["content"][0]["text"]
-            # Find JSON in the response
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
-            else:
-                logger.error("No JSON found in LLM response")
-                return {}
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Failed to parse LLM response: {str(e)}")
-            return {}
+
     
     def _parse_extraction_result(self, result: Dict[str, Any]) -> MessageAnnotations:
         """Parse LLM extraction result into MessageAnnotations"""

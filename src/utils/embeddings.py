@@ -21,16 +21,16 @@ class EmbeddingGenerator:
         self.httpx_client = None
         self.local_model = None
         
-        # Initialize based on provider
-        if settings.llm_provider == "openai" and "text-embedding" in self.model_name:
+        # Initialize based on model type
+        if "text-embedding" in self.model_name and settings.openai_api_key:
             self.httpx_client = httpx.AsyncClient(timeout=30.0)
         else:
             # Use local sentence transformer
             self._initialize_local_model()
     
     def _get_default_model(self) -> str:
-        """Get default embedding model based on provider"""
-        if settings.llm_provider == "openai" and settings.openai_api_key:
+        """Get default embedding model"""
+        if settings.openai_api_key:
             return "text-embedding-3-small"
         else:
             return "all-MiniLM-L6-v2"  # Local sentence transformer
@@ -55,14 +55,14 @@ class EmbeddingGenerator:
         # Normalize text
         text = text.strip()
         
-        if self.httpx_client and settings.llm_provider == "openai":
+        if self.httpx_client:
             return await self._generate_openai_embedding(text)
         else:
             return self._generate_local_embedding(text)
     
     async def generate_embeddings(self, texts: List[str]) -> List[np.ndarray]:
         """Generate embeddings for multiple texts"""
-        if self.httpx_client and settings.llm_provider == "openai":
+        if self.httpx_client:
             return await self._generate_openai_embeddings(texts)
         else:
             return [self._generate_local_embedding(text) for text in texts]
