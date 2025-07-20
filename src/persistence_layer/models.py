@@ -43,7 +43,7 @@ class User(Base):
     contacts = relationship("Contact", back_populates="user", cascade="all, delete-orphan")
     messages = relationship("Message", back_populates="user", cascade="all, delete-orphan")
     facts = relationship("Fact", back_populates="user", cascade="all, delete-orphan")
-    briefings = relationship("Briefing", back_populates="user", cascade="all, delete-orphan")
+
 
 
 class Contact(Base):
@@ -75,7 +75,7 @@ class Contact(Base):
     messages = relationship("Message", back_populates="contact", cascade="all, delete-orphan")
     facts = relationship("Fact", back_populates="contact", cascade="all, delete-orphan")
     outbound_replies = relationship("OutboundReply", back_populates="contact", cascade="all, delete-orphan")
-    briefings = relationship("Briefing", back_populates="contact", cascade="all, delete-orphan")
+
     
     # Indexes
     __table_args__ = (
@@ -177,23 +177,7 @@ class OutboundReply(Base):
     message = relationship("Message", back_populates="outbound_reply")
 
 
-class Briefing(Base):
-    """Date briefings sent to user"""
-    __tablename__ = "briefings"
-    
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=False)
-    
-    stage_snapshot_json = Column(JSON, nullable=False)
-    briefing_text = Column(Text, nullable=False)
-    email_sent_at = Column(DateTime)
-    
-    created_at = Column(DateTime, server_default=func.now())
-    
-    # Relationships
-    user = relationship("User", back_populates="briefings")
-    contact = relationship("Contact", back_populates="briefings")
+
 
 
 class MessageEmbedding(Base):

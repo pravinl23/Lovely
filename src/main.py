@@ -41,12 +41,6 @@ async def lifespan(app: FastAPI):
     consumer_task = asyncio.create_task(message_queue.start_consumers())
     running_tasks.append(consumer_task)
     
-    # Start monitoring if enabled
-    if settings.prometheus_enabled:
-        from src.utils.monitoring import start_metrics_server
-        metrics_task = asyncio.create_task(start_metrics_server())
-        running_tasks.append(metrics_task)
-    
     logger.info("Application started successfully")
     
     yield
@@ -81,7 +75,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

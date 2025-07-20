@@ -24,39 +24,26 @@ class Settings(BaseSettings):
     whatsapp_webhook_secret: SecretStr = Field(..., description="Webhook Signature Secret")
     webhook_url: str = Field(..., description="Public webhook URL")
     
-    # Database
-    database_url: str = Field(..., description="PostgreSQL database URL")
-    vector_db_url: Optional[str] = Field(None, description="Vector database URL")
-    
-    # Supabase Configuration (for migration)
-    supabase_url: Optional[str] = Field(None, description="Supabase project URL")
-    supabase_anon_key: Optional[SecretStr] = Field(None, description="Supabase anonymous key")
-    supabase_service_role_key: Optional[SecretStr] = Field(None, description="Supabase service role key")
+    # Supabase Configuration
+    supabase_url: str = Field(..., description="Supabase project URL")
+    supabase_anon_key: SecretStr = Field(..., description="Supabase anonymous key")
+    supabase_service_role_key: SecretStr = Field(..., description="Supabase service role key")
     
     # Redis
     redis_url: str = Field(default="redis://localhost:6379/0")
-    celery_broker_url: str = Field(default="redis://localhost:6379/1")
     
     # LLM Configuration
-    openai_api_key: Optional[SecretStr] = Field(None)
-    anthropic_api_key: Optional[SecretStr] = Field(None)
-    llm_provider: Literal["openai", "anthropic"] = Field(default="openai")
+    openai_api_key: SecretStr = Field(..., description="OpenAI API key")
     llm_model_name: str = Field(default="gpt-4-turbo-preview")
+    llm_provider: str = Field(default="openai", description="LLM provider (openai, anthropic, etc.)")
     
     # Security
     jwt_secret_key: SecretStr = Field(..., description="JWT Secret Key")
     encryption_key: SecretStr = Field(..., description="32 byte encryption key")
     
-    # Monitoring
-    sentry_dsn: Optional[str] = Field(None)
-    prometheus_enabled: bool = Field(default=True)
-    
     # Feature Flags
-    enable_media_processing: bool = Field(default=True)
-    enable_audio_transcription: bool = Field(default=True)
-    enable_image_captioning: bool = Field(default=True)
     max_concurrent_conversations: int = Field(default=10)
-    default_reply_delay_seconds: int = Field(default=1)  # Reduced from 30 to 5 seconds
+    default_reply_delay_seconds: int = Field(default=1)
     
     # Rate Limiting
     rate_limit_messages_per_minute: int = Field(default=30)
@@ -65,12 +52,12 @@ class Settings(BaseSettings):
     # Conversation Settings
     max_context_messages: int = Field(default=20)
     max_facts_per_contact: int = Field(default=100)
-    fact_decay_days: int = Field(default=90)
     
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Allow extra fields during transition
 
 
 @lru_cache()

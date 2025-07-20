@@ -88,11 +88,11 @@ class WhatsAppClient:
             # Check for token expiration specifically
             if e.response.status_code == 401 and "access token" in error_message.lower():
                 logger.error(f"WhatsApp access token has expired: {error_message}")
-                logger.error("🔧 FIX REQUIRED: Get a fresh access token from Meta for Developers")
-                logger.error("📍 Go to: https://developers.facebook.com/apps/")
-                logger.error("📍 Select your app > WhatsApp > API Setup")
-                logger.error("📍 Generate a new temporary access token")
-                logger.error("📍 Update WHATSAPP_ACCESS_TOKEN in your .env file")
+                logger.error(" FIX REQUIRED: Get a fresh access token from Meta for Developers")
+                logger.error(" Go to: https://developers.facebook.com/apps/")
+                logger.error(" Select your app > WhatsApp > API Setup")
+                logger.error(" Generate a new temporary access token")
+                logger.error(" Update WHATSAPP_ACCESS_TOKEN in your .env file")
                 
                 raise TokenExpiredError(
                     f"WhatsApp access token expired. Get a fresh token from Meta for Developers: {error_message}"

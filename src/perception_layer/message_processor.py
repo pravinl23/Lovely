@@ -5,10 +5,9 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 from src.perception_layer.models import Message, MediaType
-from src.perception_layer.media_processor import MediaProcessor
 from src.perception_layer.semantic_enricher import SemanticEnricher
 from src.core.message_queue import QueueMessage
-from src.persistence_layer.db_manager import DatabaseManager
+from src.persistence_layer.supabase_manager import SupabaseManager
 from src.utils.logging import get_logger
 from config.settings import settings
 
@@ -19,18 +18,15 @@ class MessageProcessor:
     """Processes incoming WhatsApp messages through the perception pipeline"""
     
     def __init__(self):
-        self.media_processor = MediaProcessor()
         self.semantic_enricher = SemanticEnricher()
-        self.db_manager = DatabaseManager()
+        self.db_manager = SupabaseManager()
         
     async def __aenter__(self):
-        await self.media_processor.__aenter__()
         await self.semantic_enricher.__aenter__()
         await self.db_manager.__aenter__()
         return self
         
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.media_processor.__aexit__(exc_type, exc_val, exc_tb)
         await self.semantic_enricher.__aexit__(exc_type, exc_val, exc_tb)
         await self.db_manager.__aexit__(exc_type, exc_val, exc_tb)
     
@@ -42,9 +38,7 @@ class MessageProcessor:
             # Create canonical message
             message = await self._create_canonical_message(data)
             
-            # Process media if applicable
-            if message.media_type != "text" and message.media_id:
-                await self._process_media_content(message, data)
+
             
             # Perform semantic enrichment
             if message.text_content:
@@ -52,15 +46,8 @@ class MessageProcessor:
                     message.text_content
                 )
             
-            # Store message in database
-            await self.db_manager.store_message(message)
-            
-            # Generate embeddings for vector storage
-            if message.text_content:
-                await self.db_manager.store_message_embedding(
-                    message_id=message.message_id,
-                    text=message.text_content
-                )
+            # Store message in database (this also stores the embedding)
+            stored_message = await self.db_manager.store_message(message)
             
             # Trigger cognition layer processing
             await self._trigger_cognition_processing(message)
@@ -166,29 +153,7 @@ class MessageProcessor:
             }
         
         return message
-    
-    async def _process_media_content(
-        self, 
-        message: Message, 
-        webhook_data: Dict[str, Any]
-    ):
-        """Process media content and update message"""
-        result = await self.media_processor.process_media(
-            media_id=message.media_id,
-            media_type=message.media_type,
-            mime_type=webhook_data.get("media_mime_type")
-        )
-        
-        if result["processed"] and result["extracted_text"]:
-            # Update message text content with extracted text
-            if message.caption:
-                message.text_content = f"{result['extracted_text']} Caption: {message.caption}"
-            else:
-                message.text_content = result["extracted_text"]
-                
-        # Store media URL if available
-        # Note: In production, you'd store the media in object storage
-        # and update message.media_url with the permanent URL
+
     
     async def _trigger_cognition_processing(self, message: Message):
         """Trigger cognition layer to process the message"""

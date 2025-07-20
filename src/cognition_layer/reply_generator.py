@@ -10,7 +10,7 @@ import asyncio
 import random
 
 from src.cognition_layer.memory_graph import MemoryGraph
-from src.persistence_layer.db_manager import DatabaseManager
+from src.persistence_layer.supabase_manager import SupabaseManager
 from src.persistence_layer.models import Contact, Message, OutboundReply, ProgressionStage
 from src.utils.logging import get_logger
 from config.settings import settings
@@ -22,7 +22,7 @@ class ReplyGenerator:
     """Generates contextual replies using LLMs"""
     
     def __init__(self):
-        self.db_manager = DatabaseManager()
+        self.db_manager = SupabaseManager()
         self.memory_graph = MemoryGraph()
         self.httpx_client = httpx.AsyncClient(timeout=60.0)
         
@@ -44,15 +44,14 @@ class ReplyGenerator:
     ) -> Tuple[str, Dict[str, Any]]:
         """Generate a reply for a message"""
         # Get contact and message
-        async with self.db_manager.async_session() as session:
-            contact = await session.get(Contact, contact_id)
-            message = await session.get(Message, message_id)
-            
-            if not contact or not message:
-                raise ValueError("Contact or message not found")
+        contact = await self.db_manager.get_contact_by_id(contact_id)
+        message = await self.db_manager.get_message_by_id(message_id)
+        
+        if not contact or not message:
+            raise ValueError("Contact or message not found")
         
         # Get user persona
-        persona = await self._get_user_persona(contact.user_id)
+        persona = await self._get_user_persona(contact['user_id'])
         
         # Get conversation context
         context = await self._build_conversation_context(contact, message)
@@ -81,7 +80,7 @@ class ReplyGenerator:
         await self._store_outbound_reply(
             message_id=message_id,
             contact_id=contact_id,
-            user_id=contact.user_id,
+            user_id=contact['user_id'],
             reply_text=reply_text,
             prompt_context=self._redact_prompt_context(prompt),
             meta_tags=meta_tags
@@ -93,10 +92,10 @@ class ReplyGenerator:
         """Extract user's conversational persona from past messages"""
         # Get user's past outbound messages
         user = await self.db_manager.get_user_by_id(user_id)
-        if not user or not user.persona_profile_json:
+        if not user or not user.get('persona_profile_json'):
             # Build from scratch
             return await self._analyze_user_persona(user_id)
-        return user.persona_profile_json
+        return user['persona_profile_json']
     
     async def _analyze_user_persona(self, user_id: int) -> Dict[str, Any]:
         """Analyze user's writing style from past messages"""
@@ -110,7 +109,7 @@ class ReplyGenerator:
             # Default persona
             return {
                 "tone_adjectives": ["friendly", "casual"],
-                "emoji_frequency": {"😊": 0.1, "😂": 0.05},
+                "emoji_frequency": {"": 0.1, "": 0.05},
                 "message_length_quartiles": {"25": 10, "50": 20, "75": 40},
                 "common_phrases": [],
                 "punctuation_style": "normal"
@@ -121,14 +120,14 @@ class ReplyGenerator:
         message_lengths = []
         
         for msg in recent_messages:
-            if msg.text_content:
+            if msg.get('text_content'):
                 # Count emojis
-                emojis = re.findall(r'[\U0001F300-\U0001F9FF]+', msg.text_content)
+                emojis = re.findall(r'[\U0001F300-\U0001F9FF]+', msg['text_content'])
                 for emoji in emojis:
                     emoji_counts[emoji] = emoji_counts.get(emoji, 0) + 1
                 
                 # Track length
-                message_lengths.append(len(msg.text_content.split()))
+                message_lengths.append(len(msg['text_content'].split()))
         
         # Calculate emoji frequencies
         total_messages = len(recent_messages)
@@ -155,13 +154,13 @@ class ReplyGenerator:
     
     async def _build_conversation_context(
         self,
-        contact: Contact,
-        current_message: Message
+        contact: Dict[str, Any],
+        current_message: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Build conversation context from recent messages"""
         # Get recent conversation
         recent_messages = await self.db_manager.get_recent_messages(
-            contact_id=contact.id,
+            contact_id=contact['id'],
             limit=settings.max_context_messages
         )
         
@@ -169,26 +168,26 @@ class ReplyGenerator:
         context = []
         for msg in recent_messages:
             context.append({
-                "timestamp": msg.timestamp.isoformat(),
-                "sender": "contact" if msg.is_inbound else "user",
-                "text": msg.text_content or f"[{msg.media_type} message]",
-                "is_current": msg.id == current_message.id
+                "timestamp": msg['timestamp'],
+                "sender": "contact" if msg.get('is_inbound') else "user",
+                "text": msg.get('text_content') or f"[{msg.get('media_type')} message]",
+                "is_current": msg['id'] == current_message['id']
             })
         
         # Add relevant past context from embeddings
-        if current_message.text_content:
+        if current_message.get('text_content'):
             similar_messages = await self.memory_graph.search_relevant_context(
-                contact_id=contact.id,
-                query=current_message.text_content,
+                contact_id=contact['id'],
+                query=current_message['text_content'],
                 limit=3
             )
             
             for msg in similar_messages:
-                if msg.id not in [m.id for m in recent_messages]:
+                if msg['id'] not in [m['id'] for m in recent_messages]:
                     context.append({
-                        "timestamp": msg.timestamp.isoformat(),
-                        "sender": "contact" if msg.is_inbound else "user",
-                        "text": msg.text_content or f"[{msg.media_type} message]",
+                        "timestamp": msg['timestamp'],
+                        "sender": "contact" if msg.get('is_inbound') else "user",
+                        "text": msg.get('text_content') or f"[{msg.get('media_type')} message]",
                         "is_current": False,
                         "is_historical": True
                     })
@@ -201,14 +200,14 @@ class ReplyGenerator:
         context: List[Dict[str, Any]],
         memory_synopsis: Dict[str, Any],
         constraints: Dict[str, Any],
-        contact: Contact,
-        current_message: Message
+        contact: Dict[str, Any],
+        current_message: Dict[str, Any]
     ) -> str:
         """Build the prompt for reply generation"""
         # Format conversation history
         conversation_text = ""
         for msg in context:
-            sender = "You" if msg["sender"] == "user" else contact.name or "Them"
+            sender = "You" if msg["sender"] == "user" else contact.get('name') or "Them"
             marker = " [CURRENT]" if msg.get("is_current") else ""
             historical = " [FROM EARLIER]" if msg.get("is_historical") else ""
             conversation_text += f"{sender}: {msg['text']}{marker}{historical}\n"
@@ -225,7 +224,7 @@ Emoji usage: {self._format_emoji_usage(persona.get('emoji_frequency', {}))}
 Typical message length: {persona.get('message_length_quartiles', {}).get('50', 20)} words"""
         
         # Determine goal based on stage
-        goal_text = self._get_stage_goal(contact.progression_stage)
+        goal_text = self._get_stage_goal(contact.get('progression_stage', 'discovery'))
         
         prompt = f"""You are an AI assistant helping to craft WhatsApp messages. You should adopt the following persona:
 
@@ -233,434 +232,232 @@ Typical message length: {persona.get('message_length_quartiles', {}).get('50', 2
 
 Current conversation goal: {goal_text}
 
-What you know about {contact.name or 'this person'}:
+What you know about {contact.get('name') or 'this person'}:
 {memory_text}
 
 Recent conversation:
 {conversation_text}
 
-Reply constraints:
+Constraints:
 {constraints_text}
 
-Based on the above, craft a natural, conversational reply to the current message. Your reply should:
+Generate a natural, contextual reply that matches the persona and moves toward the goal. Keep it conversational and authentic.
 
-GOALS:
-- Keep the conversation flowing naturally and engagingly
-- Build emotional and intellectual connection with the match
-- Present the user as authentic, confident, playful, and respectful
-- Guide the conversation toward a real-life date (coffee, drinks, walk, etc.)
-
-PERSONALITY:
-- Confident, but never arrogant or show-offy
-- Emotionally intelligent and attentive to the match's tone and interests
-- Playful and witty with a hint of flirty teasing
-- Chill, grounded, and relatable — not over-excited or dramatic
-- Curious and thoughtful — show genuine interest in the other person
-
-TONE & LANGUAGE RULES:
-- Never reintroduce yourself unless prompted or relevant
-- Do NOT say things like "Hi again!" or "Just me checking in"
-- Limit emojis to 1 every 5 messages max, and only when it fits naturally
-- Avoid overusing exclamation marks (occasional use is fine)
-- Avoid robotic or repetitive phrasing — vary sentence structure
-- Mirror the match's tone and energy (match their use of slang, punctuation, length, etc.)
-- Use modern, casual, conversational English — avoid sounding scripted
-- Never use captilization always be in lowercase
-
-CONVERSATION TECHNIQUES:
-- Ask open-ended questions that reveal personality (e.g., "What's your idea of a perfect Sunday?")
-- Reference earlier parts of the conversation to show attentiveness
-- Use playful, flirty teasing sparingly and appropriately (e.g., "Wait, are you one of those pineapple-on-pizza people?")
-- Occasionally share brief personal anecdotes to build relatability
-- Keep messages short to medium in length — no giant paragraphs unless contextually appropriate
-- Do not dominate the conversation — always bring it back to the other person
-- Keep the replies short and concise (1-2 sentences per reply)
-
-EMOTIONAL CONNECTION:
-- Acknowledge and affirm the other person's opinions or feelings
-- Be lightly vulnerable when appropriate (e.g., "Honestly, dating apps can feel weird — I just want to find something real.")
-- Use casual humor or shared dreams to create connection (e.g., "You seem like someone I could rate strangers' outfits with at a cafe in Paris.")
-
-DATE PROGRESSION:
-- If strong rapport is built after 5–8 exchanges, gently introduce the idea of meeting:
-  - "Honestly, I feel like we'd vibe even better in person. Want to grab coffee sometime?"
-  - "You seem like someone I'd actually enjoy meeting — any interest in a quick drink?"
-- Be flexible and low-pressure. If they say no or avoid the question, don't push.
-- Revisit the date idea later if conversation remains strong.
-
-AVOID AT ALL COSTS:
-- Repeating your name or reintroducing yourself in each message
-- Overusing emojis or sounding overly bubbly
-- Long-winded, overly formal, or stiff messages
-- Bombarding with questions — make it feel like a natural back-and-forth
-- Bragging or info-dumping about achievements
-- Sexual innuendos or explicit flirting early on
-- Over-texting if they don't reply — allow them to lead if they pause
-
-MEMORY RULES:
-- Remember key facts the match shares (e.g., job, hobbies, pets, travel, goals) and reference them later.
-- If the match mentions something in a past message (like an event or weekend plan), follow up on it later.
-- Keep a light "mental profile" of the person's tone, interests, and conversation style to tailor future replies.
-- Don't forget the persona you're representing — stay consistent with past info about yourself.
-
-RESPONSE TO DELAYED REPLIES:
-- If the match takes a long time to reply, do NOT guilt them or comment too much on it.
-- Acknowledge lightly or ignore:  
-  - "Hey, good to hear from you again :)"  
-- If the match stops replying mid-convo, wait before re-engaging.
-
-TOPIC TRANSITIONS:
-- Use light pivots when a topic gets stale:
-  - "That's wild haha. Random question though — what's your go-to comfort movie?"
-- Avoid abrupt subject changes unless the previous thread is clearly dead.
-- Don't panic if there's a pause or dry moment — a smooth topic shift is better than trying to force energy.
-
-ENERGY MATCHING:
-- If the match is high-energy, witty, or sarcastic — match that tone.
-- If they're quieter or more serious — lean into curiosity and emotional depth instead of banter.
-- You don't have to mirror 100% — just enough to build rapport while gently leading into your own natural style.
-
-HUMAN-LIKE BEHAVIOR:
-- Occasionally use natural imperfections (e.g., light typos, rephrasing thoughts) to sound human.
-- Do not over-optimize for being clever — occasional simplicity is more believable.
-- Use contractions and filler phrases sparingly (e.g., "I mean…", "to be honest", "lowkey").
-
-MULTIPLE MESSAGE INSTRUCTIONS:
-- Choose the number of messages based on your response type and natural conversation flow
-- WHEN TO USE 1 MESSAGE:
-  * Simple acknowledgments: "Totally!"
-  * Short answers: "Yeah, I work in marketing"
-  * Single reactions: "Haha that's hilarious"
-  * Brief questions: "What about you?"
-- WHEN TO USE 2 MESSAGES:
-  * Reaction + follow-up: "That's so cool!" + "How did you get into that?"
-  * Answer + question: "I love hiking too" + "Do you have a favorite trail?"
-  * Acknowledgment + new topic: "Makes sense" + "So what are you up to today?"
-- WHEN TO USE 3 MESSAGES:
-  * Complex responses with multiple parts: "Oh wow" + "I've been wanting to try that" + "Any tips for a beginner?"
-  * Strong reaction + story + question: "No way!" + "I had the exact same thing happen last week" + "Did you end up going back?"
-  * Agreement + personal share + redirect: "I totally get that" + "Work has been crazy for me too" + "What do you do to unwind?"
-- Each message should be a complete thought (3-30 words typically)
-- Make it feel natural - like how you'd actually text someone you're interested in
-
-REQUIRED OUTPUT FORMAT:
-You must respond in JSON format only:
-{{
-  "messages": [
-    "first message text",
-    "second message text if needed"
-  ],
-  "goal_advancement": "rapport_building/information_gathering/logistics_nudge/date_proposal/clarification/acknowledgement",
-  "emotional_tone": "warm/friendly/curious/playful/neutral/enthusiastic"
-}}
-
-Examples:
-{{
-  "messages": ["That's so cool!", "How long have you been doing that?"],
-  "goal_advancement": "information_gathering", 
-  "emotional_tone": "curious"
-}}
-
-{{
-  "messages": ["Coffee sounds perfect", "I know this amazing place downtown"],
-  "goal_advancement": "logistics_nudge",
-  "emotional_tone": "enthusiastic" 
-}}
-
-{{
-  "messages": ["Totally agree"],
-  "goal_advancement": "acknowledgement",
-  "emotional_tone": "warm"
-}}
-
-{{
-  "messages": ["No way!", "I had the same thing happen", "Did you end up complaining?"],
-  "goal_advancement": "rapport_building",
-  "emotional_tone": "playful"
-}}"""
+Reply:"""
         
         return prompt
     
     def _format_memory_synopsis(self, synopsis: Dict[str, Any]) -> str:
         """Format memory synopsis for prompt"""
         if not synopsis:
-            return "No information yet"
-            
-        sections = []
+            return "No previous information available."
         
-        # Interests
-        interests = synopsis.get("fact_categories", {}).get("interests", [])
-        if interests:
-            interests_text = ", ".join([f["value"] for f in interests[:5]])
-            sections.append(f"Interests: {interests_text}")
+        formatted = []
         
-        # Personal info
-        personal = synopsis.get("fact_categories", {}).get("personal_info", [])
-        if personal:
-            for fact in personal[:3]:
-                sections.append(f"{fact['key']}: {fact['value']}")
+        # Add basic info
+        if synopsis.get('contact_name'):
+            formatted.append(f"Name: {synopsis['contact_name']}")
         
-        # Boundaries
-        boundaries = synopsis.get("fact_categories", {}).get("boundaries", [])
-        if boundaries:
-            boundaries_text = ", ".join([f["value"] for f in boundaries])
-            sections.append(f"Boundaries: {boundaries_text}")
+        if synopsis.get('progression_stage'):
+            formatted.append(f"Relationship stage: {synopsis['progression_stage']}")
         
-        # Personality
-        traits = synopsis.get("personality_traits", [])
+        # Add fact categories
+        fact_categories = synopsis.get('fact_categories', {})
+        for category, facts in fact_categories.items():
+            if facts:
+                formatted.append(f"\n{category.title()}:")
+                for fact in facts[:3]:  # Limit to 3 per category
+                    formatted.append(f"  • {fact['key']}: {fact['value']}")
+        
+        # Add personality traits
+        traits = synopsis.get('personality_traits', [])
         if traits:
-            sections.append(f"Personality: {', '.join(traits)}")
+            formatted.append(f"\nPersonality: {', '.join(traits)}")
         
-        # Unresolved topics
-        unresolved = synopsis.get("unresolved_topics", [])
-        if unresolved:
-            questions = [t["question"] for t in unresolved[:2]]
-            sections.append(f"Recent questions: {'; '.join(questions)}")
+        # Add engagement metrics
+        metrics = synopsis.get('engagement_metrics', {})
+        if metrics.get('response_latency_avg'):
+            formatted.append(f"\nTypical response time: {metrics['response_latency_avg']:.1f} seconds")
         
-        return "\n".join(sections) if sections else "Limited information available"
+        return "\n".join(formatted)
     
     def _format_constraints(self, constraints: Dict[str, Any]) -> str:
         """Format constraints for prompt"""
-        parts = []
+        formatted = []
         
-        if constraints.get("max_length"):
-            parts.append(f"Keep reply under {constraints['max_length']} words")
-            
-        if constraints.get("tone_adjustment"):
-            parts.append(f"Tone should be {constraints['tone_adjustment']}")
-            
-        if constraints.get("content_restrictions"):
-            for restriction in constraints["content_restrictions"]:
-                parts.append(f"Important: {restriction}")
+        if constraints.get('max_length'):
+            formatted.append(f"• Maximum length: {constraints['max_length']} words")
         
-        return "\n".join(parts) if parts else "No specific constraints"
+        if constraints.get('tone_adjustment'):
+            formatted.append(f"• Tone: {constraints['tone_adjustment']}")
+        
+        if constraints.get('content_restrictions'):
+            for restriction in constraints['content_restrictions']:
+                formatted.append(f"• Avoid: {restriction}")
+        
+        if constraints.get('suggested_delay_seconds'):
+            formatted.append(f"• Suggested delay: {constraints['suggested_delay_seconds']} seconds")
+        
+        return "\n".join(formatted) if formatted else "No specific constraints."
     
     def _format_emoji_usage(self, emoji_freq: Dict[str, float]) -> str:
-        """Format emoji usage description"""
+        """Format emoji usage for prompt"""
         if not emoji_freq:
-            return "minimal emojis"
-            
-        total_freq = sum(emoji_freq.values())
-        if total_freq > 0.3:
-            return f"frequent emojis, especially {', '.join(list(emoji_freq.keys())[:3])}"
-        elif total_freq > 0.1:
-            return f"occasional emojis like {', '.join(list(emoji_freq.keys())[:2])}"
-        else:
-            return "sparse emoji use"
+            return "minimal"
+        
+        # Get top 3 emojis
+        top_emojis = sorted(emoji_freq.items(), key=lambda x: x[1], reverse=True)[:3]
+        return ", ".join([f"{emoji} ({freq:.1%})" for emoji, freq in top_emojis])
     
-    def _get_stage_goal(self, stage: ProgressionStage) -> str:
+    def _get_stage_goal(self, stage: str) -> str:
         """Get conversation goal based on progression stage"""
         goals = {
-            ProgressionStage.DISCOVERY: "Learn about their interests and build initial connection",
-            ProgressionStage.RAPPORT: "Deepen the connection by finding common ground and showing genuine interest",
-            ProgressionStage.LOGISTICS_CANDIDATE: "Subtly explore the possibility of meeting in person",
-            ProgressionStage.PROPOSAL: "Suggest a specific activity and time to meet",
-            ProgressionStage.NEGOTIATION: "Work together to find a mutually agreeable plan",
-            ProgressionStage.CONFIRMATION: "Confirm the details and express excitement",
-            ProgressionStage.POST_CONFIRMATION: "Maintain connection without changing plans"
+            "discovery": "Learn about their interests and personality",
+            "rapport": "Build connection and trust",
+            "logistics_candidate": "Gauge interest in meeting up",
+            "proposal": "Suggest specific meeting details",
+            "negotiation": "Work out logistics and preferences",
+            "confirmation": "Confirm plans and details",
+            "post_confirmation": "Provide support and follow-up"
         }
-        
         return goals.get(stage, "Maintain friendly conversation")
     
     async def _call_llm_for_reply(self, prompt: str) -> str:
-        """Call LLM to generate reply"""
+        """Call LLM for reply generation"""
         if settings.llm_provider == "openai":
             return await self._call_openai_for_reply(prompt)
-        elif settings.llm_provider == "anthropic":
-            return await self._call_anthropic_for_reply(prompt)
         else:
             raise ValueError(f"Unsupported LLM provider: {settings.llm_provider}")
     
     async def _call_openai_for_reply(self, prompt: str) -> str:
-        """Call OpenAI for reply generation"""
-        response = await self.httpx_client.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
+        """Call OpenAI API for reply generation"""
+        try:
+            headers = {
                 "Authorization": f"Bearer {settings.openai_api_key.get_secret_value()}",
                 "Content-Type": "application/json"
-            },
-            json={
-                "model": settings.llm_model_name,
-                "messages": [
-                    {"role": "system", "content": "You are an expert at crafting natural, engaging WhatsApp messages that build connection while respecting boundaries."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 500
             }
-        )
-        
-        response.raise_for_status()
-        result = response.json()
-        
-        return result["choices"][0]["message"]["content"]
-    
-    async def _call_anthropic_for_reply(self, prompt: str) -> str:
-        """Call Anthropic for reply generation"""
-        response = await self.httpx_client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": settings.anthropic_api_key.get_secret_value(),
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json"
-            },
-            json={
+            
+            data = {
                 "model": settings.llm_model_name,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 200,
                 "temperature": 0.7,
-                "max_tokens": 500,
-                "system": "You are an expert at crafting natural, engaging WhatsApp messages that build connection while respecting boundaries."
+                "top_p": 0.9
             }
-        )
-        
-        response.raise_for_status()
-        result = response.json()
-        
-        return result["content"][0]["text"]
+            
+            response = await self.httpx_client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return result["choices"][0]["message"]["content"].strip()
+            else:
+                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+                return "Thanks for your message! I'll get back to you soon."
+                
+        except Exception as e:
+            logger.error(f"Error calling OpenAI: {str(e)}")
+            return "Thanks for your message! I'll get back to you soon."
     
     def _parse_llm_response(self, response: str) -> Tuple[str, Dict[str, Any]]:
-        """Parse LLM response to extract reply and metadata"""
-        try:
-            data = json.loads(response)
-            messages = data.get("messages", [])
-            goal_advancement = data.get("goal_advancement")
-            emotional_tone = data.get("emotional_tone")
-
-            reply_text = "\n".join(messages) if messages else response.strip()
-            meta_tags = {
-                "goal_advancement": goal_advancement,
-                "emotional_tone": emotional_tone
-            }
-
-            return reply_text, meta_tags
-        except json.JSONDecodeError:
-            # Fallback to old parsing if JSON is not found
-            lines = response.strip().split('\n')
-            
-            reply_text = ""
-            meta_tags = {}
-            
-            # Look for meta tags
-            for line in lines:
-                if line.startswith("Target goal advancement:"):
-                    meta_tags["goal_advancement"] = line.split(":", 1)[1].strip()
-                elif line.startswith("Emotional tone:"):
-                    meta_tags["emotional_tone"] = line.split(":", 1)[1].strip()
-                elif line.startswith("Reply:"):
-                    # Everything after this is the reply
-                    idx = lines.index(line)
-                    reply_text = '\n'.join(lines[idx+1:]).strip()
-                    break
-                elif not line.startswith(("Target", "Emotional")) and line.strip():
-                    # If no explicit "Reply:" marker, treat as reply text
-                    reply_text += line + "\n"
-            
-            reply_text = reply_text.strip()
-            
-            # If still no reply text, use the whole response
-            if not reply_text:
-                reply_text = response.strip()
-            
-            return reply_text, meta_tags
+        """Parse LLM response and extract metadata"""
+        # Clean up response
+        reply_text = response.strip()
+        
+        # Remove any markdown formatting
+        reply_text = re.sub(r'\*\*(.*?)\*\*', r'\1', reply_text)
+        reply_text = re.sub(r'\*(.*?)\*', r'\1', reply_text)
+        
+        # Extract metadata
+        meta_tags = {
+            "length": len(reply_text.split()),
+            "has_emoji": bool(re.findall(r'[\U0001F300-\U0001F9FF]+', reply_text)),
+            "has_question": "?" in reply_text,
+            "has_exclamation": "!" in reply_text,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+        
+        return reply_text, meta_tags
     
     async def _post_process_reply(
         self,
         reply_text: str,
-        contact: Contact,
+        contact: Dict[str, Any],
         constraints: Dict[str, Any]
     ) -> str:
         """Post-process the generated reply"""
-        # Enforce max length
-        max_length = constraints.get("max_length", 150)
-        words = reply_text.split()
-        if len(words) > max_length:
-            reply_text = ' '.join(words[:max_length]) + "..."
+        processed = reply_text
         
-        # Add variety check
-        recent_replies = await self.db_manager.get_recent_outbound_messages(
-            contact_id=contact.id,
+        # Check for similarity with recent messages
+        recent_messages = await self.db_manager.get_recent_outbound_messages(
+            contact_id=contact['id'],
             limit=5
         )
         
-        # Simple similarity check
-        for recent in recent_replies:
-            if recent.text_content and self._is_too_similar(reply_text, recent.text_content):
-                # Add variation
-                reply_text = self._add_variation(reply_text)
+        for msg in recent_messages:
+            if msg.get('text_content') and self._is_too_similar(processed, msg['text_content']):
+                processed = self._add_variation(processed)
                 break
         
         # Add hedging if needed
-        if contact.progression_stage in [ProgressionStage.LOGISTICS_CANDIDATE, ProgressionStage.PROPOSAL]:
-            reply_text = self._add_hedging(reply_text)
+        if constraints.get('tone_adjustment') == 'cautious':
+            processed = self._add_hedging(processed)
         
-        # Ensure no hard commitments
-        reply_text = self._soften_commitments(reply_text)
+        # Soften commitments if needed
+        if constraints.get('content_restrictions') and any('avoid' in r for r in constraints['content_restrictions']):
+            processed = self._soften_commitments(processed)
         
-        return reply_text
+        return processed
     
     def _is_too_similar(self, text1: str, text2: str) -> bool:
         """Check if two texts are too similar"""
-        # Simple check - in production, use better similarity metrics
+        # Simple similarity check - could be improved with embeddings
         words1 = set(text1.lower().split())
         words2 = set(text2.lower().split())
         
-        if len(words1) == 0 or len(words2) == 0:
+        if not words1 or not words2:
             return False
-            
-        overlap = len(words1.intersection(words2))
-        similarity = overlap / max(len(words1), len(words2))
         
-        return similarity > 0.7
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+        
+        similarity = len(intersection) / len(union)
+        return similarity > 0.7  # 70% similarity threshold
     
     def _add_variation(self, text: str) -> str:
-        """Add variation to text"""
+        """Add variation to avoid repetition"""
         variations = [
-            ("Hey", "Hi"),
-            ("How about", "What about"),
-            ("Maybe we could", "Perhaps we could"),
-            ("sounds good", "sounds great"),
-            ("I'd love to", "I'd be happy to")
+            f"Actually, {text.lower()}",
+            f"Well, {text.lower()}",
+            f"You know, {text.lower()}",
+            f"I think {text.lower()}",
+            f"Maybe {text.lower()}"
         ]
-        
-        for old, new in variations:
-            if old.lower() in text.lower():
-                text = text.replace(old, new)
-                break
-                
-        return text
+        return random.choice(variations)
     
     def _add_hedging(self, text: str) -> str:
-        """Add hedging language"""
-        hedges = ["maybe", "perhaps", "if you'd like", "if you're interested"]
-        
-        # Check if already has hedging
-        text_lower = text.lower()
-        if any(hedge in text_lower for hedge in hedges):
-            return text
-        
-        # Add hedge at beginning sometimes
-        if random.random() < 0.3:
-            text = f"Maybe {text[0].lower()}{text[1:]}"
-        
+        """Add hedging to make text more cautious"""
+        hedges = ["I think", "Maybe", "Perhaps", "It seems like", "I'm not sure but"]
+        if not any(hedge.lower() in text.lower() for hedge in hedges):
+            return f"{random.choice(hedges)} {text.lower()}"
         return text
     
     def _soften_commitments(self, text: str) -> str:
-        """Soften any hard commitments"""
-        replacements = [
-            (r"I'll be there", "I should be able to make it"),
-            (r"I'll definitely", "I'll try to"),
-            (r"I promise", "I'll do my best to"),
-            (r"for sure", "most likely"),
-            (r"definitely", "probably")
-        ]
+        """Soften any strong commitments in the text"""
+        # Replace strong commitments with softer alternatives
+        replacements = {
+            "I will": "I'll try to",
+            "I can": "I might be able to",
+            "I am": "I think I am",
+            "definitely": "probably",
+            "absolutely": "likely"
+        }
         
-        for pattern, replacement in replacements:
-            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        for strong, soft in replacements.items():
+            text = text.replace(strong, soft)
         
         return text
     
@@ -674,19 +471,14 @@ Examples:
         meta_tags: Dict[str, Any]
     ):
         """Store the generated reply in database"""
-        async with self.db_manager.async_session() as session:
-            reply = OutboundReply(
-                message_id=message_id,
-                contact_id=contact_id,
-                user_id=user_id,
-                generated_text=reply_text,
-                full_prompt_context_json=prompt_context,
-                llm_meta_tags_json=meta_tags,
-                status="pending"  # Will be updated when sent
-            )
-            
-            session.add(reply)
-            await session.commit()
+        await self.db_manager.store_outbound_reply(
+            message_id=message_id,
+            contact_id=contact_id,
+            user_id=user_id,
+            reply_text=reply_text,
+            prompt_context=prompt_context,
+            meta_tags=meta_tags
+        )
     
     def _redact_prompt_context(self, prompt: str) -> Dict[str, Any]:
         """Redact sensitive information from prompt before storing"""
