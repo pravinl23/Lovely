@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-OBS Hotkey Controller
-Requires: pip install obsws-python keyboard
+OBS Hotkey Controller with HeyGen Knowledge Base Integration
+Requires: pip install obsws-python keyboard httpx
 """
 
 import asyncio
@@ -13,10 +13,13 @@ import logging
 try:
     import obsws_python as obs
     import keyboard
+    import httpx
 except ImportError as e:
     print(f"Missing required package: {e}")
-    print("Install with: pip install obsws-python keyboard")
+    print("Install with: pip install obsws-python keyboard httpx")
     sys.exit(1)
+
+from heygen_knowledge_updater import HeyGenKnowledgeUpdater
 
 # Configuration
 OBS_HOST = "localhost"
@@ -33,6 +36,12 @@ BROWSER_SOURCE_NAME = "Browser"
 # Commands to run
 START_COMMAND = ["echo", "Starting recording..."]  # Replace with your command
 STOP_COMMAND = ["echo", "Recording stopped."]     # Replace with your command
+
+# HeyGen and Supabase Configuration
+HEYGEN_API_KEY = "YOUR_HEYGEN_API_KEY"  # Replace with your actual HeyGen API key
+SUPABASE_URL = "YOUR_SUPABASE_URL"      # Replace with your Supabase URL
+SUPABASE_SERVICE_KEY = "YOUR_SUPABASE_SERVICE_KEY"  # Replace with your Supabase service key
+KNOWLEDGE_BASE_ID = "bfa1e9e954c44662836e4b98dab05766"  # Your HeyGen knowledge base ID
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -70,7 +79,11 @@ class OBSController:
             logger.info("Running start command...")
             subprocess.run(START_COMMAND, check=True)
             
-            # 2. Make browser source visible
+            # 2. Update HeyGen knowledge base with conversation history
+            logger.info("Updating HeyGen knowledge base with conversation history...")
+            asyncio.run(self._update_heygen_knowledge())
+            
+            # 3. Make browser source visible
             logger.info(f"Making '{BROWSER_SOURCE_NAME}' visible...")
             # Get current scene name
             current_scene = self.client.get_current_program_scene()
@@ -82,7 +95,7 @@ class OBSController:
                 True
             )
             
-            # 3. Start recording
+            # 4. Start recording
             logger.info("Starting OBS recording...")
             self.client.start_record()
             
@@ -124,6 +137,33 @@ class OBSController:
             
         except Exception as e:
             logger.error(f"Error in stop sequence: {e}")
+    
+    async def _update_heygen_knowledge(self):
+        """Update HeyGen knowledge base with conversation context"""
+        try:
+            # Check if credentials are configured
+            if (HEYGEN_API_KEY == "YOUR_HEYGEN_API_KEY" or 
+                SUPABASE_URL == "YOUR_SUPABASE_URL" or 
+                SUPABASE_SERVICE_KEY == "YOUR_SUPABASE_SERVICE_KEY"):
+                logger.warning("HeyGen/Supabase credentials not configured - skipping knowledge base update")
+                return
+            
+            # Create knowledge updater and update the knowledge base
+            async with HeyGenKnowledgeUpdater(
+                heygen_api_key=HEYGEN_API_KEY,
+                supabase_url=SUPABASE_URL,
+                supabase_service_key=SUPABASE_SERVICE_KEY,
+                knowledge_base_id=KNOWLEDGE_BASE_ID
+            ) as updater:
+                success = await updater.update_knowledge_with_conversation_history()
+                
+                if success:
+                    logger.info("✅ HeyGen knowledge base updated successfully")
+                else:
+                    logger.warning("⚠️ Failed to update HeyGen knowledge base")
+                    
+        except Exception as e:
+            logger.error(f"Error updating HeyGen knowledge base: {e}")
     
     def get_source_id(self, source_name: str) -> int:
         """Get the scene item ID for a source"""
