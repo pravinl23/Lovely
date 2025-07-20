@@ -97,3 +97,5 @@ yarn-error.log*
 
 *.md
 *.mp3
+
+obs_config.py
