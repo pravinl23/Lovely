@@ -31,26 +31,28 @@ pip install -r obs_requirements.txt
 
 Or manually:
 ```bash
-pip install obsws-python keyboard httpx
+pip install obsws-python keyboard httpx python-dotenv
 ```
 
 ### 3. Configure API Credentials
 
-**Set up HeyGen and Supabase credentials** in `obs_hotkey_controller.py`:
+**Add your credentials to your `.env` file**:
 
-```python
-# HeyGen API Configuration
-HEYGEN_API_KEY = "your_heygen_api_key_here"
-KNOWLEDGE_BASE_ID = "bfa1e9e954c44662836e4b98dab05766"
+```bash
+# OBS WebSocket (optional)
+OBS_PASSWORD=your_obs_password_if_you_have_one
 
-# Supabase Configuration  
-SUPABASE_URL = "https://your-project.supabase.co"
-SUPABASE_SERVICE_KEY = "your_service_role_key_here"
+# HeyGen API
+HEYGEN_API_KEY=your_heygen_api_key_here
+
+# Supabase  
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your_service_role_key_here
 ```
 
 **Get your credentials:**
 - **HeyGen API Key**: Go to [HeyGen Settings > API](https://app.heygen.com/settings/api) and create a new key
-- **Supabase URL & Key**: Go to your Supabase project → Settings → API
+- **Supabase URL & Key**: Go to your Supabase project → Settings → API (use "service_role" key, NOT "anon" key)
 
 ### 4. Configure the Script Settings
 

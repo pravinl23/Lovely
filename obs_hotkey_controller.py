@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 OBS Hotkey Controller with HeyGen Knowledge Base Integration
-Requires: pip install obsws-python keyboard httpx
+Requires: pip install obsws-python keyboard httpx python-dotenv
 """
 
 import asyncio
 import subprocess
 import sys
+import os
 from typing import Optional
 import logging
 
@@ -14,17 +15,21 @@ try:
     import obsws_python as obs
     import keyboard
     import httpx
+    from dotenv import load_dotenv
 except ImportError as e:
     print(f"Missing required package: {e}")
-    print("Install with: pip install obsws-python keyboard httpx")
+    print("Install with: pip install obsws-python keyboard httpx python-dotenv")
     sys.exit(1)
 
 from heygen_knowledge_updater import HeyGenKnowledgeUpdater
 
+# Load environment variables
+load_dotenv()
+
 # Configuration
 OBS_HOST = "localhost"
 OBS_PORT = 4455
-OBS_PASSWORD = "uBbyri7iLbK4RYke"  # Set if you have WebSocket password enabled
+OBS_PASSWORD = os.getenv("OBS_PASSWORD", "")  # OBS WebSocket password from .env
 
 # Hotkey configuration
 START_HOTKEY = "f9"  # Change to your preferred key
@@ -37,10 +42,10 @@ BROWSER_SOURCE_NAME = "Browser"
 START_COMMAND = ["echo", "Starting recording..."]  # Replace with your command
 STOP_COMMAND = ["echo", "Recording stopped."]     # Replace with your command
 
-# HeyGen and Supabase Configuration
-HEYGEN_API_KEY = "YOUR_HEYGEN_API_KEY"  # Replace with your actual HeyGen API key
-SUPABASE_URL = "YOUR_SUPABASE_URL"      # Replace with your Supabase URL
-SUPABASE_SERVICE_KEY = "YOUR_SUPABASE_SERVICE_KEY"  # Replace with your Supabase service key
+# HeyGen and Supabase Configuration (loaded from .env)
+HEYGEN_API_KEY = os.getenv("HEYGEN_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL") 
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 KNOWLEDGE_BASE_ID = "bfa1e9e954c44662836e4b98dab05766"  # Your HeyGen knowledge base ID
 
 # Logging setup
@@ -142,10 +147,11 @@ class OBSController:
         """Update HeyGen knowledge base with conversation context"""
         try:
             # Check if credentials are configured
-            if (HEYGEN_API_KEY == "YOUR_HEYGEN_API_KEY" or 
-                SUPABASE_URL == "YOUR_SUPABASE_URL" or 
-                SUPABASE_SERVICE_KEY == "YOUR_SUPABASE_SERVICE_KEY"):
-                logger.warning("HeyGen/Supabase credentials not configured - skipping knowledge base update")
+            if (not HEYGEN_API_KEY or 
+                not SUPABASE_URL or 
+                not SUPABASE_SERVICE_KEY):
+                logger.warning("HeyGen/Supabase credentials not found in .env file - skipping knowledge base update")
+                logger.info("Make sure HEYGEN_API_KEY, SUPABASE_URL, and SUPABASE_SERVICE_KEY are set in your .env file")
                 return
             
             # Create knowledge updater and update the knowledge base

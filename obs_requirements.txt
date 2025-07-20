@@ -1,3 +1,4 @@
 obsws-python>=1.7.0
 keyboard>=0.13.5
-httpx>=0.28.0 
+httpx>=0.28.0
+python-dotenv>=1.0.0 
