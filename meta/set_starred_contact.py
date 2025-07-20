@@ -19,7 +19,7 @@ def set_starred_contact(contact_id):
     # Show mapping
     mapping = {
         '647': 'Bob',
-        '416': 'Isabella', 
+        '416': 'Ava', 
         '289': 'Adam'
     }
     
@@ -46,7 +46,7 @@ def show_current():
             
             mapping = {
                 '647': 'Bob',
-                '416': 'Isabella', 
+                '416': 'Ava', 
                 '289': 'Adam'
             }
             
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         print("  python set_starred_contact.py show          # Show current")
         print("\nAvailable contacts:")
         print("  647 - Bob")
-        print("  416 - Isabella")
+        print("  416 - Ava")
         print("  289 - Adam")
         sys.exit(1)
     

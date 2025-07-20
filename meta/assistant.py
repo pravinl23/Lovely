@@ -14,9 +14,8 @@ if not OPENAI_API_KEY:
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def build_prompt(transcript):
-    """Build prompt using the current active profile"""
-    # Get the current active profile
-    profile = profile_manager.get_current_profile()
+    # Always load Ava's profile
+    profile = profile_manager.load_profile('416')  # Ava's contact ID
     
     if not profile:
         return f"""
@@ -26,8 +25,8 @@ What is a charming, flirty, or witty one-liner I can say in response?
 Keep it natural and conversational.
 """
     
-    # Build comprehensive prompt using profile information
-    name = profile.get('name', 'this person')
+    # Build comprehensive prompt using Ava's profile information
+    name = profile.get('name', 'Ava')
     interests = ', '.join(profile.get('interests', []))
     personality = profile.get('personality', {})
     traits = ', '.join(personality.get('traits', []))
@@ -91,12 +90,11 @@ def get_reply(transcript):
         
         reply = response.choices[0].message.content.strip()
         
-        # Log the conversation if we have an active profile
-        profile = profile_manager.get_current_profile()
+        # Log the conversation to Ava's profile (always)
+        profile = profile_manager.load_profile('416')
         if profile:
-            contact_id = profile.get('phone_number')
-            if contact_id:
-                profile_manager.add_conversation_log(contact_id, transcript, reply)
+            contact_id = '416'  # Always use Ava's contact ID
+            profile_manager.add_conversation_log(contact_id, transcript, reply)
         
         return reply
         
@@ -105,12 +103,12 @@ def get_reply(transcript):
         return "That's interesting! Tell me more about that."
 
 def get_current_profile_info():
-    """Get information about the currently active profile"""
-    profile = profile_manager.get_current_profile()
+    """Get information about Ava's profile (always)"""
+    profile = profile_manager.load_profile('416')  # Always load Ava
     if profile:
         return {
-            'name': profile.get('name', 'Unknown'),
-            'phone_number': profile.get('phone_number', 'Unknown'),
+            'name': profile.get('name', 'Ava'),
+            'phone_number': profile.get('phone_number', '416'),
             'interests': profile.get('interests', []),
             'personality': profile.get('personality', {}).get('traits', [])
         }

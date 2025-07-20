@@ -48,7 +48,7 @@ class ProfileManager:
             # Map contact IDs to profile files
             profile_mapping = {
                 '647': 'bob.json',
-                '416': 'isabella.json', 
+                '416': 'Ava.json', 
                 '289': 'adam.json'
             }
             
@@ -72,17 +72,12 @@ class ProfileManager:
             return None
     
     def get_current_profile(self) -> Optional[Dict[str, Any]]:
-        """Get the currently active profile (starred contact)"""
+        """Get the currently active profile (always Ava)"""
         if self.current_profile:
             return self.current_profile
         
-        # Try to load the starred contact's profile
-        starred_id = self.get_starred_contact()
-        if starred_id:
-            return self.load_profile(str(starred_id))
-        
-        # Fallback to default profile
-        return self.load_profile('647')  # Default to Bob
+        # Always load Ava's profile
+        return self.load_profile('416')  # Always Ava
     
     def update_profile(self, contact_id: str, updates: Dict[str, Any]) -> bool:
         """Update a contact's knowledge graph with new information"""
@@ -104,7 +99,7 @@ class ProfileManager:
             # Save the updated profile
             profile_mapping = {
                 '647': 'bob.json',
-                '416': 'isabella.json', 
+                '416': 'Ava.json', 
                 '289': 'adam.json'
             }
             
@@ -157,7 +152,7 @@ class ProfileManager:
             # Save the updated profile
             profile_mapping = {
                 '647': 'bob.json',
-                '416': 'isabella.json', 
+                '416': 'Ava.json', 
                 '289': 'adam.json'
             }
             
