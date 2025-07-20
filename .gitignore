@@ -94,3 +94,6 @@ yarn-error.log*
 
 
 *.wav
+
+*.md
+*.mp3
