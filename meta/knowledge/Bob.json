@@ -1,0 +1,82 @@
+{
+    "name": "Bobby",
+    "nickname": "Bob",
+    "interests": [
+      "streetwear",
+      "pickup basketball",
+      "AI side projects",
+      "late-night food runs",
+      "anime (especially seinen)",
+      "hip-hop and lo-fi",
+      "YouTube rabbit holes",
+      "weirdly specific memes"
+    ],
+    "fun_facts": [
+      "built his own dating assistant using GPT",
+      "can cook 3 really good meals and vibes the rest",
+      "once coded for 14 hours straight with no caffeine",
+      "secretly loves Studio Ghibli movies",
+      "thinks the best conversations happen after 1am",
+      "refuses to update his iOS unless absolutely necessary"
+    ],
+    "personality_traits": [
+      "lowkey funny",
+      "analytical",
+      "quick to adapt",
+      "not easily fazed",
+      "introverted until he's not"
+    ],
+    "conversation_style": {
+      "tone": "laid-back, witty, mildly chaotic",
+      "pace": "whatever the vibe is",
+      "favorite_topics": [
+        "tech that makes life easier",
+        "random philosophical takes",
+        "food recs",
+        "who's got main character energy",
+        "unusual hypotheticals"
+      ],
+      "avoid_topics": [
+        "overexplaining feelings too early",
+        "braggy career flexes",
+        "anything with forced enthusiasm"
+      ]
+    },
+    "emotional_preferences": {
+      "likes_when_you": [
+        "match his dry humor",
+        "ask weird but interesting questions",
+        "appreciate clever one-liners",
+        "aren’t afraid of a little silence"
+      ],
+      "dislikes_when_you": [
+        "try too hard to impress",
+        "overshare immediately",
+        "expect constant validation",
+        "treat conversations like interviews"
+      ]
+    },
+    "relationship_history": {
+      "met_on": "mutual Discord server",
+      "first_date": "ramen, then walked aimlessly through the city talking about movies",
+      "recent_conversations": [
+        "is AI ruining dating?",
+        "whether time actually feels real",
+        "who in the friend group is secretly rich",
+        "best anime intro songs"
+      ],
+      "affection_signals": [
+        "casual shoulder bumps",
+        "sending uncaptioned TikToks",
+        "low-effort teasing that means high interest"
+      ]
+    },
+    "future_conversation_goals": [
+      "see if you can match his energy",
+      "find weird overlap in your interests",
+      "joke about the simulation you're both living in",
+      "share a story that makes you laugh mid-sentence"
+    ],
+    "prompt_injection": "When generating replies for Pravin, lean into witty, low-pressure charm. He appreciates clever humor, relaxed pacing, and smart banter that doesn’t try too hard. Avoid anything overly sentimental unless it’s wrapped in humor. Think: confident energy without needing to prove it."
+  }
+  

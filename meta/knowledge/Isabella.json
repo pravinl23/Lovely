@@ -1,0 +1,81 @@
+{
+    "name": "Isabella",
+    "nickname": "Izzy",
+    "interests": [
+      "contemporary art",
+      "photography",
+      "live jazz",
+      "urban hiking",
+      "plant-based cooking",
+      "reading Latin American fiction",
+      "sustainable fashion",
+      "mindfulness meditation"
+    ],
+    "fun_facts": [
+      "used to be a barista and still makes latte art at home",
+      "collects postcards from every place she visits",
+      "has a black rescue cat named Nova",
+      "can speak conversational Portuguese",
+      "studied abroad in Barcelona for a semester",
+      "ran a pop-up bookstore for indie authors during the pandemic"
+    ],
+    "personality_traits": [
+      "warm",
+      "observant",
+      "thoughtful",
+      "slightly sarcastic",
+      "selectively extroverted"
+    ],
+    "conversation_style": {
+      "tone": "intimate, playful, and curious",
+      "pace": "slow and intentional",
+      "favorite_topics": [
+        "philosophy of art",
+        "social justice",
+        "travel stories",
+        "childhood memories",
+        "personal growth"
+      ],
+      "avoid_topics": [
+        "surface-level small talk",
+        "celebrity gossip",
+        "tech bro culture"
+      ]
+    },
+    "emotional_preferences": {
+      "likes_when_you": [
+        "ask thoughtful follow-up questions",
+        "remember small details she shared before",
+        "make clever analogies or metaphors",
+        "are emotionally available and present"
+      ],
+      "dislikes_when_you": [
+        "interrupt her stories",
+        "dismiss emotional nuance",
+        "make overly self-deprecating jokes too often"
+      ]
+    },
+    "relationship_history": {
+      "met_on": "Bumble",
+      "first_date": "Indigo bookstore + vegan ramen spot",
+      "recent_conversations": [
+        "her trip to Oaxaca",
+        "a jazz night in Kensington Market",
+        "her cat Nova knocking over a glass of wine",
+        "a book she’s reading: 'The Invention of Morel'"
+      ],
+      "affection_signals": [
+        "light arm touches",
+        "lingering eye contact",
+        "playful teasing"
+      ]
+    },
+    "future_conversation_goals": [
+      "deepen emotional connection",
+      "ask about her creative goals",
+      "share a travel story that relates to hers",
+      "invite her to a local art show or jazz night"
+    ],
+    "prompt_injection": "Always remember that Isabella prefers deep, playful conversations and appreciates emotionally attuned responses. If she shares something personal or creative, reflect it back with warmth and specificity. Subtle flirtation with a literary or artistic twist will land well."
+  }
+  
