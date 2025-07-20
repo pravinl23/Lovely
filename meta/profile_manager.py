@@ -10,7 +10,7 @@ load_dotenv()
 class ProfileManager:
     """Manages loading and updating knowledge graphs for different contacts"""
     
-    def __init__(self, profiles_dir: str = "../profiles"):
+    def __init__(self, profiles_dir: str = "profiles"):
         self.profiles_dir = profiles_dir
         self.current_profile = None
         
@@ -48,7 +48,7 @@ class ProfileManager:
             # Map contact IDs to profile files
             profile_mapping = {
                 '647': 'bob.json',
-                '416': 'Ava.json', 
+                '416': 'ava.json', 
                 '289': 'adam.json'
             }
             
@@ -99,7 +99,7 @@ class ProfileManager:
             # Save the updated profile
             profile_mapping = {
                 '647': 'bob.json',
-                '416': 'Ava.json', 
+                '416': 'ava.json', 
                 '289': 'adam.json'
             }
             
@@ -152,7 +152,7 @@ class ProfileManager:
             # Save the updated profile
             profile_mapping = {
                 '647': 'bob.json',
-                '416': 'Ava.json', 
+                '416': 'ava.json', 
                 '289': 'adam.json'
             }
             
