@@ -1,30 +1,35 @@
 """
-OBS Controller Configuration with HeyGen Integration
-Copy this file and update with your actual credentials
+OBS Controller Environment Variables Configuration Guide
+The script now reads credentials from your .env file for better security
 """
 
 # =============================================================================
-# OBS WebSocket Configuration
+# Environment Variables (.env file)
 # =============================================================================
-OBS_HOST = "localhost"
-OBS_PORT = 4455
-OBS_PASSWORD = ""  # Set if you have a password configured in OBS
+"""
+The OBS controller now automatically loads these from your .env file:
+
+OBS_PASSWORD=your_obs_websocket_password_if_any
+HEYGEN_API_KEY=your_heygen_api_key_here  
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_SERVICE_KEY=your_service_role_key_here
+
+This is much more secure than hardcoding credentials in the script!
+"""
 
 # =============================================================================
-# Hotkey Configuration
+# Script Configuration (edit obs_hotkey_controller.py)
 # =============================================================================
+# These settings can be modified in the main script:
+
+# Hotkey Configuration:
 START_HOTKEY = "f9"   # Key to start recording sequence
 STOP_HOTKEY = "f10"   # Key to stop recording sequence
 
-# =============================================================================
-# OBS Source Configuration
-# =============================================================================
+# OBS Source Configuration:
 BROWSER_SOURCE_NAME = "Browser"  # Must match exactly with your OBS source name
 
-# =============================================================================
-# Custom Commands
-# =============================================================================
-# These commands run before/after recording
+# Custom Commands:
 START_COMMAND = ["echo", "Starting recording..."]  # Replace with your command
 STOP_COMMAND = ["echo", "Recording stopped."]     # Replace with your command
 
@@ -33,21 +38,8 @@ STOP_COMMAND = ["echo", "Recording stopped."]     # Replace with your command
 # STOP_COMMAND = ["python", "cleanup_stream.py"]
 # START_COMMAND = ["osascript", "-e", 'display notification "Stream started"']
 
-# =============================================================================
-# HeyGen API Configuration
-# =============================================================================
-# Get your HeyGen API key from: https://app.heygen.com/settings/api
-HEYGEN_API_KEY = "YOUR_HEYGEN_API_KEY_HERE"  # Replace with your actual API key
-
-# Your HeyGen Knowledge Base ID (specified in requirements)
+# Knowledge Base ID (already configured):
 KNOWLEDGE_BASE_ID = "bfa1e9e954c44662836e4b98dab05766"
-
-# =============================================================================
-# Supabase Configuration  
-# =============================================================================
-# Get these from your Supabase project settings
-SUPABASE_URL = "https://your-project-id.supabase.co"  # Your Supabase project URL
-SUPABASE_SERVICE_KEY = "YOUR_SUPABASE_SERVICE_ROLE_KEY"  # Service role key (not anon key!)
 
 # =============================================================================
 # How to Get Your Credentials:

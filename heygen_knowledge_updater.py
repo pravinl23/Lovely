@@ -8,8 +8,16 @@ import asyncio
 import httpx
 import json
 import logging
+import os
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv is optional, continue without it
+    pass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -164,10 +172,10 @@ class HeyGenKnowledgeUpdater:
             logger.error(f"Error in knowledge update process: {str(e)}")
             return False
 
-# Configuration - Update these with your actual values
-HEYGEN_API_KEY = "YOUR_HEYGEN_API_KEY"  # Replace with actual key
-SUPABASE_URL = "YOUR_SUPABASE_URL"      # Replace with actual URL  
-SUPABASE_SERVICE_KEY = "YOUR_SUPABASE_SERVICE_KEY"  # Replace with actual key
+# Configuration - loaded from .env file
+HEYGEN_API_KEY = os.getenv("HEYGEN_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
 async def main():
     """Test the knowledge updater"""
