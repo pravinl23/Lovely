@@ -1,0 +1,94 @@
+{
+  "name": "Isabella",
+  "phone_number": "416",
+  "interests": [
+    "yoga and meditation",
+    "cooking and baking",
+    "art galleries",
+    "sustainable living",
+    "classical music"
+  ],
+  "personality": {
+    "traits": [
+      "thoughtful",
+      "creative",
+      "mindful",
+      "independent",
+      "cultured"
+    ],
+    "communication_style": "articulate and reflective",
+    "energy_level": "calm and steady"
+  },
+  "personal_info": {
+    "job": "art therapist",
+    "age": 26,
+    "location": "arts district",
+    "education": "psychology and fine arts",
+    "living_situation": "lives alone in a studio apartment"
+  },
+  "conversation_history": [
+    {
+      "date": "2024-01-16",
+      "topics": ["art therapy work", "mindfulness practices", "favorite books"],
+      "mood": "contemplative",
+      "engagement": "high"
+    },
+    {
+      "date": "2024-01-19",
+      "topics": ["cooking experiments", "local art scene", "personal growth"],
+      "mood": "inspired",
+      "engagement": "very high"
+    }
+  ],
+  "preferences": {
+    "tone": "thoughtful and genuine",
+    "topics": ["art and creativity", "personal development", "food and culture", "mindfulness"],
+    "avoid": ["superficial conversations", "gossip", "negative energy"],
+    "date_ideas": [
+      "art gallery visit",
+      "cooking class together",
+      "meditation session",
+      "farmers market walk",
+      "classical concert"
+    ]
+  },
+  "facts_learned": [
+    "works as an art therapist helping people with trauma",
+    "practices yoga daily and teaches meditation",
+    "loves experimenting with new recipes",
+    "has traveled extensively in Europe",
+    "collects vintage cookbooks",
+    "lives in a converted warehouse studio",
+    "speaks three languages fluently"
+  ],
+  "last_topics": [
+    "her recent art therapy session",
+    "weekend cooking project",
+    "upcoming gallery opening"
+  ],
+  "unresolved_topics": [
+    {
+      "question": "How did her art therapy session go?",
+      "context": "She mentioned having a challenging session with a client"
+    },
+    {
+      "question": "What's her favorite type of cuisine to cook?",
+      "context": "We discussed her love for cooking and trying new recipes"
+    }
+  ],
+  "boundaries": [
+    "values deep, meaningful conversations",
+    "needs time to process and reflect",
+    "appreciates authenticity over small talk",
+    "prefers quality over quantity in relationships"
+  ],
+  "engagement_metrics": {
+    "response_latency_avg": 45.8,
+    "message_length_avg": 35,
+    "emoji_usage": "minimal",
+    "initiation_frequency": "thoughtful"
+  },
+  "progression_stage": "discovery",
+  "last_interaction": "2024-01-19",
+  "next_suggested_action": "ask about her art therapy work and show genuine interest"
+} 

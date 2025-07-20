@@ -1,0 +1,94 @@
+{
+  "name": "Adam",
+  "phone_number": "289",
+  "interests": [
+    "basketball",
+    "hip-hop music",
+    "street art",
+    "community organizing",
+    "fitness"
+  ],
+  "personality": {
+    "traits": [
+      "energetic",
+      "community-minded",
+      "passionate",
+      "direct",
+      "loyal"
+    ],
+    "communication_style": "enthusiastic and straightforward",
+    "energy_level": "high"
+  },
+  "personal_info": {
+    "job": "community outreach coordinator",
+    "age": 30,
+    "location": "urban neighborhood",
+    "education": "social work degree",
+    "living_situation": "lives with his brother"
+  },
+  "conversation_history": [
+    {
+      "date": "2024-01-17",
+      "topics": ["community project", "basketball league", "local politics"],
+      "mood": "passionate",
+      "engagement": "very high"
+    },
+    {
+      "date": "2024-01-20",
+      "topics": ["street art festival", "hip-hop culture", "fitness goals"],
+      "mood": "excited",
+      "engagement": "high"
+    }
+  ],
+  "preferences": {
+    "tone": "energetic and authentic",
+    "topics": ["community", "sports", "music", "social justice", "fitness"],
+    "avoid": ["pretentious conversations", "elitist attitudes", "superficial topics"],
+    "date_ideas": [
+      "basketball game",
+      "street art tour",
+      "community event",
+      "hip-hop concert",
+      "workout session"
+    ]
+  },
+  "facts_learned": [
+    "works for a non-profit helping at-risk youth",
+    "plays in a local basketball league",
+    "organizes street art festivals",
+    "has a large extended family in the area",
+    "loves old-school hip-hop",
+    "volunteers at the community center",
+    "has a passion for mentoring young people"
+  ],
+  "last_topics": [
+    "upcoming community event",
+    "basketball tournament",
+    "street art project"
+  ],
+  "unresolved_topics": [
+    {
+      "question": "How did the community event planning go?",
+      "context": "He was organizing a youth basketball tournament"
+    },
+    {
+      "question": "What's his favorite hip-hop artist?",
+      "context": "We discussed music preferences and he mentioned loving hip-hop"
+    }
+  ],
+  "boundaries": [
+    "values authenticity and realness",
+    "doesn't like fake or pretentious people",
+    "appreciates direct communication",
+    "cares deeply about his community"
+  ],
+  "engagement_metrics": {
+    "response_latency_avg": 8.5,
+    "message_length_avg": 20,
+    "emoji_usage": "frequent",
+    "initiation_frequency": "high"
+  },
+  "progression_stage": "rapport",
+  "last_interaction": "2024-01-20",
+  "next_suggested_action": "suggest joining him for a community event or basketball game"
+} 
