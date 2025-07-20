@@ -1,0 +1,93 @@
+{
+  "name": "Bob",
+  "phone_number": "647",
+  "interests": [
+    "rock climbing",
+    "craft beer",
+    "indie music",
+    "hiking",
+    "photography"
+  ],
+  "personality": {
+    "traits": [
+      "adventurous",
+      "laid-back",
+      "intellectual",
+      "environmentally conscious",
+      "social"
+    ],
+    "communication_style": "casual and witty",
+    "energy_level": "moderate to high"
+  },
+  "personal_info": {
+    "job": "software engineer at a startup",
+    "age": 28,
+    "location": "downtown area",
+    "education": "computer science degree",
+    "living_situation": "lives with a roommate"
+  },
+  "conversation_history": [
+    {
+      "date": "2024-01-15",
+      "topics": ["work stress", "weekend plans", "favorite restaurants"],
+      "mood": "positive",
+      "engagement": "high"
+    },
+    {
+      "date": "2024-01-18",
+      "topics": ["rock climbing gym", "beer preferences", "travel dreams"],
+      "mood": "excited",
+      "engagement": "very high"
+    }
+  ],
+  "preferences": {
+    "tone": "casual and playful",
+    "topics": ["adventure", "food and drinks", "music", "travel"],
+    "avoid": ["politics", "religion", "excessive small talk"],
+    "date_ideas": [
+      "rock climbing together",
+      "craft beer tasting",
+      "hiking in the mountains",
+      "photography walk",
+      "indie concert"
+    ]
+  },
+  "facts_learned": [
+    "works at a tech startup and loves the fast-paced environment",
+    "has been rock climbing for 3 years",
+    "favorite beer style is IPA",
+    "dreams of traveling to Patagonia",
+    "plays guitar as a hobby",
+    "lives in a trendy downtown neighborhood",
+    "has a dog named Luna"
+  ],
+  "last_topics": [
+    "his recent climbing trip",
+    "work project deadline",
+    "weekend plans"
+  ],
+  "unresolved_topics": [
+    {
+      "question": "How did his climbing trip go?",
+      "context": "He mentioned going on a climbing trip last weekend"
+    },
+    {
+      "question": "What's his favorite local brewery?",
+      "context": "We discussed craft beer preferences"
+    }
+  ],
+  "boundaries": [
+    "prefers not to discuss ex-relationships early on",
+    "values personal space and independence",
+    "doesn't like overly clingy behavior"
+  ],
+  "engagement_metrics": {
+    "response_latency_avg": 15.2,
+    "message_length_avg": 25,
+    "emoji_usage": "moderate",
+    "initiation_frequency": "balanced"
+  },
+  "progression_stage": "rapport",
+  "last_interaction": "2024-01-18",
+  "next_suggested_action": "suggest a casual meetup for coffee or beer"
+} 
